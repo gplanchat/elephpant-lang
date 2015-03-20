@@ -224,14 +224,16 @@ public:
             internal_type::walk_methods_map(te, [&](internal_type::methods_map_t::mapped_type method, internal_type::methods_map_t::key_type name) {
                 ios << "        - " << (method_entry::get_access(method) == rephp::engine::ACC_PUBLIC ? "public" : (method_entry::get_access(method) == rephp::engine::ACC_PROTECTED ? "protected" : "private"));
                 ios << " " << internal_type::get_name(callable_prototype::get_return_type(method_entry::get_prototype(method)));
-                ios << " " << name << std::endl;
+                ios << " " << name << "( )" << std::endl;
             });
         }
 
         if (internal_type::get_operators_map(te).size()) {
             ios << "      - Operators:" << std::endl;
             internal_type::walk_operators_map(te, [&](internal_type::operators_map_t::mapped_type method, internal_type::operators_map_t::key_type op) {
-                ios << "        - " << engine::engine::get_operator_string(op) << std::endl;
+                ios << "        - " << (method_entry::get_access(method) == rephp::engine::ACC_PUBLIC ? "public" : (method_entry::get_access(method) == rephp::engine::ACC_PROTECTED ? "protected" : "private"));
+                ios << " " << internal_type::get_name(callable_prototype::get_return_type(method_entry::get_prototype(method)));
+                ios << " " << engine::engine::get_operator_string(op) << "( )" << std::endl;
             });
         }
 
