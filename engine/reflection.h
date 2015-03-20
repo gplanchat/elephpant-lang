@@ -30,8 +30,20 @@ using namespace std;
 
 using rephp::engine::access_mode;
 
+typedef map<string, pair<shared_ptr<rephp::engine::internal_type>, shared_ptr<rephp::engine::internal_value>>> parameters_map_t;
+
 class callable_prototype
 {
+public:
+    inline static shared_ptr<rephp::engine::internal_type> get_return_type(shared_ptr<rephp::engine::callable_prototype> pe)
+    {
+        return pe->return_type;
+    }
+
+    inline static parameters_map_t get_parameters(shared_ptr<rephp::engine::callable_prototype> pe)
+    {
+        return pe->parameters;
+    }
 };
 
 class method_entry
@@ -211,6 +223,7 @@ public:
             ios << "      - Methods:" << std::endl;
             internal_type::walk_methods_map(te, [&](internal_type::methods_map_t::mapped_type method, internal_type::methods_map_t::key_type name) {
                 ios << "        - " << (method_entry::get_access(method) == rephp::engine::ACC_PUBLIC ? "public" : (method_entry::get_access(method) == rephp::engine::ACC_PROTECTED ? "protected" : "private"));
+                ios << " " << internal_type::get_name(callable_prototype::get_return_type(method_entry::get_prototype(method)));
                 ios << " " << name << std::endl;
             });
         }

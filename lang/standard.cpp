@@ -232,6 +232,9 @@ standard_bundle::standard_bundle(string name): bundle(name)
     shared_ptr<internal_type> ce_char(new internal_type("Char", TYP_NATIVE_TYPE, ce_mixed));
     this->register_class(ce_char);
 
+    shared_ptr<internal_type> ce_callable(new internal_type("Callable", TYP_NATIVE_TYPE, ce_mixed));
+    this->register_class(ce_callable);
+
     shared_ptr<internal_type> ce_composite(new internal_type("Composite", TYP_NATIVE_TYPE, ce_mixed));
     this->register_class(ce_composite);
 
@@ -251,10 +254,17 @@ standard_bundle::standard_bundle(string name): bundle(name)
     shared_ptr<internal_type> ce_countable(new internal_type("Countable", TYP_INTERFACE));
     ce_countable->add_interface(ce_composite);
     this->register_class(ce_countable);
+    ce_countable->add_method("count", shared_ptr<callable_prototype>(new callable_prototype(ce_integer)), nullptr, ACC_PUBLIC);
 
     shared_ptr<internal_type> ce_sortable(new internal_type("Sortable", TYP_INTERFACE));
     ce_sortable->add_interface(ce_composite);
     this->register_class(ce_sortable);
+
+    shared_ptr<internal_type> ce_sorter(new internal_type("Sorter", TYP_INTERFACE));
+    this->register_class(ce_sorter);
+    auto proto_sorter_sort = shared_ptr<callable_prototype>(new callable_prototype(ce_null));
+    proto_sorter_sort->add_parameter("sortableCollection", ce_sortable);
+    ce_sorter->add_method("sort", proto_sorter_sort, nullptr, ACC_PUBLIC);
 
     shared_ptr<internal_type> ce_string(new internal_type("String", TYP_NATIVE_TYPE, ce_composite));
     ce_string->add_interface(ce_traversable);
