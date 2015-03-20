@@ -243,12 +243,12 @@ internal_type::has_trait_recursive(shared_ptr<internal_type> trait)
     return found != this->traits.end();
 }
 
-bool
-internal_type::has_method(string name, shared_ptr<callable_prototype> prototype, shared_ptr<internal_value> context)
+shared_ptr<method_entry>
+internal_type::find_method(string name, shared_ptr<callable_prototype> prototype, shared_ptr<internal_value> context)
 {
     auto range = this->methods.equal_range(name);
     if (range.first == range.second) {
-        return false;
+        return nullptr;
     }
 
     auto context_type = context->get_type();
@@ -291,18 +291,24 @@ internal_type::has_method(string name, shared_ptr<callable_prototype> prototype,
     });
 
     if (found == range.second) {
-        return false;
+        return nullptr;
     }
 
-    return true;
+    return found->second;
 }
 
 bool
-internal_type::has_operator(engine_operator op, shared_ptr<callable_prototype> prototype, shared_ptr<internal_value> context)
+internal_type::has_method(string name, shared_ptr<callable_prototype> prototype, shared_ptr<internal_value> context)
+{
+    return this->find_method(name, prototype, context) != nullptr;
+}
+
+shared_ptr<method_entry>
+internal_type::find_operator(engine_operator op, shared_ptr<callable_prototype> prototype, shared_ptr<internal_value> context)
 {
     auto range = this->operators.equal_range(op);
     if (range.first == range.second) {
-        return false;
+        return nullptr;
     }
 
     auto context_type = context->get_type();
@@ -345,10 +351,16 @@ internal_type::has_operator(engine_operator op, shared_ptr<callable_prototype> p
     });
 
     if (found == range.second) {
-        return false;
+        return nullptr;
     }
 
-    return true;
+    return found->second;
+}
+
+bool
+internal_type::has_operator(engine_operator op, shared_ptr<callable_prototype> prototype, shared_ptr<internal_value> context)
+{
+    return this->find_operator(op, prototype, context) != nullptr;
 }
 
 bool

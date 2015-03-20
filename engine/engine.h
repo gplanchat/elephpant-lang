@@ -78,6 +78,13 @@ class internal_value;
 class bundle;
 
 typedef boost::variant<bool,char,long,double,string,vector<shared_ptr<internal_value>>,map<string,shared_ptr<internal_value>>,shared_ptr<void>> internal_variant_t;
+typedef map<string, pair<shared_ptr<internal_type>, shared_ptr<internal_value>>> parameters_map_t;
+typedef unordered_map<string, shared_ptr<internal_type>>                         class_map_t;
+typedef unordered_map<string, shared_ptr<internal_value>>                        const_map_t;
+typedef unordered_map<string, pair<shared_ptr<internal_type>, access_mode>>      attributes_map_t;
+typedef unordered_multimap<string, shared_ptr<method_entry>>                     methods_map_t;
+typedef unordered_multimap<engine_operator, shared_ptr<method_entry>>            operators_map_t;
+typedef unordered_map<string, shared_ptr<internal_value>>                        value_attributes_map_t;
 
 class engine
 {
@@ -112,8 +119,6 @@ class callable_prototype: public enable_shared_from_this<callable_prototype>
     friend rephp::reflection::callable_prototype;
 
 private:
-    typedef unordered_map<string, pair<shared_ptr<internal_type>, shared_ptr<internal_value>>> parameters_map_t;
-
     shared_ptr<internal_type> return_type;
     parameters_map_t          parameters;
 
@@ -144,6 +149,8 @@ public:
 
     bool matches_prototype(shared_ptr<callable_prototype> prototype);
     bool matches_access_mode(access_mode mode);
+
+    //bool call(shared_ptr<internal_value> retval, map<string,shared_ptr<internal_value>> parameters, shared_ptr<internal_value> context);
 };
 
 class internal_type: public enable_shared_from_this<internal_type>
@@ -151,12 +158,6 @@ class internal_type: public enable_shared_from_this<internal_type>
     friend rephp::reflection::internal_type;
 
 private:
-    typedef unordered_map<string, shared_ptr<internal_type>>                    class_map_t;
-    typedef unordered_map<string, shared_ptr<internal_value>>                   const_map_t;
-    typedef unordered_map<string, pair<shared_ptr<internal_type>, access_mode>> attributes_map_t;
-    typedef unordered_multimap<string, shared_ptr<method_entry>>                methods_map_t;
-    typedef unordered_multimap<engine_operator, shared_ptr<method_entry>>       operators_map_t;
-
     shared_ptr<internal_type> parent;
     class_map_t               interfaces;
     class_map_t               traits;
@@ -191,6 +192,9 @@ public:
     bool has_operator(engine_operator op, shared_ptr<callable_prototype> prototype, shared_ptr<internal_value> context);
     bool has_attribute(string name, shared_ptr<internal_value> context);
 
+    shared_ptr<method_entry> find_method(string name, shared_ptr<callable_prototype> prototype, shared_ptr<internal_value> context);
+    shared_ptr<method_entry> find_operator(engine_operator op, shared_ptr<callable_prototype> prototype, shared_ptr<internal_value> context);
+
     string get_name();
     shared_ptr<internal_type> get_parent();
 };
@@ -200,10 +204,8 @@ class internal_value: public enable_shared_from_this<internal_value>
     friend rephp::reflection::internal_value;
 
 private:
-    typedef unordered_map<string, shared_ptr<internal_value>> attributes_map_t;
-
     shared_ptr<internal_type> type;
-    attributes_map_t          attributes;
+    value_attributes_map_t    attributes;
     internal_variant_t        raw_value;
 
 public:
@@ -219,6 +221,30 @@ public:
     {
         this->raw_value = value;
     }
+
+    template<typename T>
+    inline T to()
+    {
+        return boost::get<T>(this->raw_value);
+    }
+/*
+    inline shared_ptr<internal_value> call(string method_name, shared_ptr<internal_type> return_type, map<string,shared_ptr<internal_value>> parameters)
+    {
+        shared_ptr<internal_value> retval;
+        shared_ptr<callable_prototype> proto(new callable_prototype())
+
+        for (auto it = parameters.begin(); it != parameters.end(); ++it) {
+            proto->add_parameter(it->first, it->second.get_type());
+        }
+
+        auto method = this->get_type()->find_method(method_name, proto, shared_from_this());
+        if (method == nullptr) {
+            throw wrong_call("method does not exist.");
+        }
+
+        //method->call();
+    }
+    */
 };
 
 template<>
@@ -395,6 +421,34 @@ public:
         return item;
     }
 };
+
+static ostream &
+operator<< (ostream &ios, internal_value &val)
+{
+    if (bool value = val.to<bool>()) {
+        ios << (value);
+    } else if (char value = val.to<char>()) {
+       ios << (value);
+    } else if (long value = val.to<long>()) {
+       ios << (value);
+    } else if (double value = val.to<double>()) {
+       ios << (value);
+//    } else if (string value = val.to<string>()) {
+//       ios << (value);
+//    } else if (vector<shared_ptr<internal_value>> value = val.to<vector<shared_ptr<internal_value>>>()) {
+//       ios << (*value);
+//        ios << "vector(" << value.size() << ")";
+//    } else if (map<string,shared_ptr<internal_value>> value = val.to<map<string,shared_ptr<internal_value>>>()) {
+//       ios << (*value);
+//        ios << "map(" << value.size() << ")";
+//    } else if (shared_ptr<void> value = val.to<shared_ptr<void>>()) {
+//       ios << (value);
+    } else {
+        ios << "<invalid>";
+    }
+
+    return ios;
+}
 
 };
 
