@@ -405,6 +405,7 @@ internal_type::get_parent()
     return parent;
 }
 
+
 internal_value::internal_value(shared_ptr<internal_type> type):
     type(type)
 {}
@@ -415,39 +416,11 @@ internal_value::get_type()
     return this->type;
 }
 
-shared_ptr<void>
-internal_value::get_ptr()
-{
-    return raw_value_ptr;
-}
-
-void
-internal_value::set_ptr(shared_ptr<void> &value)
-{
-    raw_value_ptr = value;
-}
-
-template<typename T>
-const T
-internal_value::get() const
-{
-    return *(static_cast<T*>(raw_value_ptr));
-}
-
-template<typename T>
-void
-internal_value::set(const T &value)
-{
-    *static_cast<T*>(raw_value_ptr) = value;
-}
-
 bundle::bundle(const char *const name): name(name)
-{
-}
+{}
 
 bundle::bundle(string name): name(name)
-{
-}
+{}
 
 void
 bundle::register_class(shared_ptr<internal_type> ce)
@@ -472,6 +445,70 @@ bundle::get_name()
 {
     return this->name;
 }
+
+template<>
+inline shared_ptr<internal_value>
+bundle::invoke<short>(string &name, short value)
+{
+    auto type = this->get_class(name);
+
+    shared_ptr<internal_value> item(new internal_value(type));
+    long var = static_cast<long>(value);
+    item->set<long>(var);
+
+    return item;
+}
+
+template<>
+inline shared_ptr<internal_value>
+bundle::invoke<int>(string &name, int value)
+{
+    auto type = this->get_class(name);
+
+    shared_ptr<internal_value> item(new internal_value(type));
+    long var = static_cast<long>(value);
+    item->set<long>(var);
+
+    return item;
+}
+
+template<>
+inline shared_ptr<internal_value>
+bundle::invoke<float>(string &name, float value)
+{
+    auto type = this->get_class(name);
+
+    shared_ptr<internal_value> item(new internal_value(type));
+    double var = static_cast<double>(value);
+    item->set<double>(var);
+
+    return item;
+}
+
+unordered_map<engine_operator_t, string> engine::operators_map = {
+    ADD_OPERATOR(OP_ADD),
+    ADD_OPERATOR(OP_SUB),
+    ADD_OPERATOR(OP_MUL),
+    ADD_OPERATOR(OP_DIV),
+    ADD_OPERATOR(OP_MOD),
+    ADD_OPERATOR(OP_INTDIV),
+    ADD_OPERATOR(OP_AND),
+    ADD_OPERATOR(OP_OR),
+    ADD_OPERATOR(OP_XOR),
+    ADD_OPERATOR(OP_NOT),
+    ADD_OPERATOR(OP_ADD),
+    ADD_OPERATOR(OP_BITWISE_AND),
+    ADD_OPERATOR(OP_BITWISE_OR),
+    ADD_OPERATOR(OP_BITWISE_XOR),
+    ADD_OPERATOR(OP_BITWISE_NOT),
+    ADD_OPERATOR(OP_LHS),
+    ADD_OPERATOR(OP_RHS),
+    ADD_OPERATOR(OP_OFFSET_SET),
+    ADD_OPERATOR(OP_OFFSET_GET),
+    ADD_OPERATOR(OP_OFFSET_UNSET),
+    ADD_OPERATOR(OP_OFFSET_EXISTS),
+    ADD_OPERATOR(OP_DOT)
+};
 
 };
 

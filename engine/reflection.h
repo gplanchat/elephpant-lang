@@ -36,6 +36,21 @@ class callable_prototype
 
 class method_entry
 {
+public:
+    inline static const shared_ptr<rephp::engine::callable_prototype> get_prototype(shared_ptr<rephp::engine::method_entry> me)
+    {
+        return me->prototype;
+    }
+
+    inline static const shared_ptr<rephp::engine::worker> get_worker_callable(shared_ptr<rephp::engine::method_entry> me)
+    {
+        return me->worker_callable;
+    }
+
+    inline static rephp::engine::access_mode get_access(shared_ptr<rephp::engine::method_entry> me)
+    {
+        return me->access;
+    }
 };
 
 class internal_type
@@ -113,7 +128,7 @@ public:
         }
     }
 
-    inline static void walk_consts(shared_ptr<rephp::engine::internal_type> te, std::function<void(const_map_t::mapped_type,const_map_t::key_type)> callback)
+    inline static void walk_consts_map(shared_ptr<rephp::engine::internal_type> te, std::function<void(const_map_t::mapped_type,const_map_t::key_type)> callback)
     {
         auto map = get_consts_map(te);
         for (auto it = map.begin(); it != map.end(); ++it) {
@@ -121,7 +136,7 @@ public:
         }
     }
 
-    inline static void walk_attributes(shared_ptr<rephp::engine::internal_type> te, std::function<void(attributes_map_t::mapped_type,attributes_map_t::key_type)> callback)
+    inline static void walk_attributes_map(shared_ptr<rephp::engine::internal_type> te, std::function<void(attributes_map_t::mapped_type,attributes_map_t::key_type)> callback)
     {
         auto map = get_attributes_map(te);
         for (auto it = map.begin(); it != map.end(); ++it) {
@@ -129,7 +144,7 @@ public:
         }
     }
 
-    inline static void walk_methods(shared_ptr<rephp::engine::internal_type> te, std::function<void(methods_map_t::mapped_type,methods_map_t::key_type)> callback)
+    inline static void walk_methods_map(shared_ptr<rephp::engine::internal_type> te, std::function<void(methods_map_t::mapped_type,methods_map_t::key_type)> callback)
     {
         auto map = get_methods_map(te);
         for (auto it = map.begin(); it != map.end(); ++it) {
@@ -137,12 +152,77 @@ public:
         }
     }
 
-    inline static void walk_operators(shared_ptr<rephp::engine::internal_type> te, std::function<void(operators_map_t::mapped_type,operators_map_t::key_type)> callback)
+    inline static void walk_operators_map(shared_ptr<rephp::engine::internal_type> te, std::function<void(operators_map_t::mapped_type,operators_map_t::key_type)> callback)
     {
         auto map = get_operators_map(te);
         for (auto it = map.begin(); it != map.end(); ++it) {
             callback(it->second, it->first);
         }
+    }
+
+    inline static std::ostream &dump(std::ostream &ios, shared_ptr<rephp::engine::internal_type> te)
+    {
+        switch (internal_type::get_type(te)) {
+        case engine::TYP_NATIVE_TYPE:
+            ios << "    - Type [ " << internal_type::get_name(te) << " ]" << std::endl;
+            break;
+        case engine::TYP_CLASS:
+            ios << "    - Class [ " << internal_type::get_name(te) << " ]" << std::endl;
+            break;
+        case engine::TYP_INTERFACE:
+            ios << "    - Interface [ " << internal_type::get_name(te) << " ]" << std::endl;
+            break;
+        case engine::TYP_TRAIT:
+            ios << "    - Trait [ " << internal_type::get_name(te) << " ]" << std::endl;
+            break;
+        case engine::TYP_ENUM:
+            ios << "    - Enum [ " << internal_type::get_name(te) << " ]" << std::endl;
+            break;
+        }
+
+        auto parent_ce = internal_type::get_parent(te);
+        if (parent_ce != nullptr) {
+            ios << "      - Parent [ " << internal_type::get_name(parent_ce) << " ]" << std::endl;
+        }
+
+        if (internal_type::get_interfaces_map(te).size()) {
+            ios << "      - Interfaces:" << std::endl;
+            internal_type::walk_interfaces_map(te, [&](internal_type::classes_map_t::mapped_type interface_te, internal_type::classes_map_t::key_type ) {
+                ios << "        - [ " << internal_type::get_name(interface_te) << " ]" << std::endl;
+            });
+        }
+
+        if (internal_type::get_traits_map(te).size()) {
+            ios << "      - Traits:" << std::endl;
+            internal_type::walk_traits_map(te, [&](internal_type::classes_map_t::mapped_type trait_te, internal_type::classes_map_t::key_type name) {
+                ios << "        - [ " << internal_type::get_name(trait_te) << " ]" << std::endl;
+            });
+        }
+
+        if (internal_type::get_attributes_map(te).size()) {
+            ios << "      - Attributes:" << std::endl;
+            internal_type::walk_attributes_map(te, [&](internal_type::attributes_map_t::mapped_type attribute, internal_type::attributes_map_t::key_type name) {
+                ios << "        - " << (attribute.second == rephp::engine::ACC_PUBLIC ? "public" : (attribute.second == rephp::engine::ACC_PROTECTED ? "protected" : "private"));
+                ios << " " << name << " [ " << internal_type::get_name(attribute.first) << " ]" << std::endl;
+            });
+        }
+
+        if (internal_type::get_methods_map(te).size()) {
+            ios << "      - Methods:" << std::endl;
+            internal_type::walk_methods_map(te, [&](internal_type::methods_map_t::mapped_type method, internal_type::methods_map_t::key_type name) {
+                ios << "        - " << (method_entry::get_access(method) == rephp::engine::ACC_PUBLIC ? "public" : (method_entry::get_access(method) == rephp::engine::ACC_PROTECTED ? "protected" : "private"));
+                ios << " " << name << std::endl;
+            });
+        }
+
+        if (internal_type::get_operators_map(te).size()) {
+            ios << "      - Operators:" << std::endl;
+            internal_type::walk_operators_map(te, [&](internal_type::operators_map_t::mapped_type method, internal_type::operators_map_t::key_type op) {
+                ios << "        - " << engine::engine::get_operator_string(op) << std::endl;
+            });
+        }
+
+        return ios;
     }
 };
 
@@ -185,6 +265,20 @@ public:
             callback(it->second, it->first);
         }
     }
+
+    inline static std::ostream &dump(std::ostream &ios, shared_ptr<rephp::engine::bundle> be)
+    {
+        using namespace rephp::reflection;
+
+        ios << "- Bundle [ " << bundle::get_name(be) << " ]" << std::endl;
+        ios << "  - Declared Classes: " << std::endl;
+
+        bundle::walk_classes_map(be, [&](bundle::classes_map_t::mapped_type ce, bundle::classes_map_t::key_type) {
+            internal_type::dump(ios, ce);
+        });
+
+        return ios;
+    }
 };
 
 };
@@ -207,50 +301,6 @@ inline std::ostream&
 operator<< (std::ostream &ios, std::shared_ptr<rephp::engine::internal_type> const te)
 {
     using namespace rephp::reflection;
-
-    ios << "    - Class [ " << internal_type::get_name(te) << " ]" << std::endl;
-    auto parent_ce = internal_type::get_parent(te);
-    if (parent_ce != nullptr) {
-        ios << "      - Parent [ " << internal_type::get_name(parent_ce) << " ]" << std::endl;
-    }
-/*
-    if (internal_type::get_interfaces_map(te).size()) {
-        ios << "      - Interfaces:" << std::endl;
-        internal_type::walk_interfaces_map(te, [&](internal_type::classes_map_t::mapped_type interface_te, internal_type::classes_map_t::key_type ) {
-            ios << "        - [ " << internal_type::get_name(interface_te) << " ]" << std::endl;
-        });
-    }
-
-    if (internal_type::get_traits_map(te).size()) {
-        ios << "      - Traits:" << std::endl;
-        internal_type::walk_traits_map(te, [&](internal_type::classes_map_t::mapped_type trait_te, internal_type::classes_map_t::key_type name) {
-            ios << "        - [ " << internal_type::get_name(trait_te) << " ]" << std::endl;
-        });
-    }
-
-    if (internal_type::get_attributes_map(te).size()) {
-        ios << "      - Attributes:" << std::endl;
-        internal_type::walk_attributes_map(te, [&](internal_type::attributes_map_t::mapped_type attribute, internal_type::attributes_map_t::key_type name) {
-            ios << "        - " << (attribute.second == ACC_PUBLIC ? "public" : (attribute.second == ACC_PROTECTED ? "protected" : "private"))
-            ios << " " << name << " [ " << internal_type::get_name(attribute.first) << " ]" << std::endl;
-        });
-    }
-
-    if (internal_type::get_methods_map(te).size()) {
-        ios << "      - Methods:" << std::endl;
-        internal_type::walk_methods_map(te, [&](internal_type::methods_map_t::mapped_type method, internal_type::methods_map_t::key_type name) {
-            ios << "        - " << (attribute.second == ACC_PUBLIC ? "public" : (attribute.second == ACC_PROTECTED ? "protected" : "private"))
-            ios << " " << name << std::endl;
-        });
-    }
-
-    if (internal_type::get_operators_map(te).size()) {
-        ios << "      - Methods:" << std::endl;
-        internal_type::walk_operators_map(te, [&](internal_type::operators_map_t::mapped_type method, internal_type::operators_map_t::key_type op) {
-            ios << "        - " << op << " " << name << std::endl;
-        });
-    }
-*/
     return ios;
 }
 
@@ -265,14 +315,7 @@ operator<< (std::ostream &ios, std::shared_ptr<rephp::engine::bundle> const re)
 {
     using namespace rephp::reflection;
 
-    ios << "- Bundle [ " << bundle::get_name(re) << " ]" << std::endl;
-    ios << "  - Declared Classes: " << std::endl;
-
-    bundle::walk_classes_map(re, [&](bundle::classes_map_t::mapped_type ce, bundle::classes_map_t::key_type name) {
-        ios << ce << std::endl;
-    });
-
-    return ios;
+    return bundle::dump(ios, re);
 }
 
 #endif

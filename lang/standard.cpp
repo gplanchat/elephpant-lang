@@ -183,22 +183,22 @@ standard_bundle::standard_bundle(string name): bundle(name)
         ce->add_operator(op, proto, worker);
     };
 
-    shared_ptr<internal_type> ce_mixed(new internal_type("Mixed", TYP_INTERFACE));
+    shared_ptr<internal_type> ce_mixed(new internal_type("Mixed", TYP_NATIVE_TYPE));
     this->register_class(ce_mixed);
 
-    shared_ptr<internal_type> ce_null(new internal_type("Null", TYP_INTERFACE, ce_mixed));
+    shared_ptr<internal_type> ce_null(new internal_type("Null", TYP_NATIVE_TYPE, ce_mixed));
     this->register_class(ce_null);
 
-    shared_ptr<internal_type> ce_scalar(new internal_type("Scalar", TYP_INTERFACE, ce_mixed));
+    shared_ptr<internal_type> ce_scalar(new internal_type("Scalar", TYP_NATIVE_TYPE, ce_mixed));
     this->register_class(ce_scalar);
 
-    shared_ptr<internal_type> ce_boolean(new internal_type("Boolean", TYP_CLASS, ce_scalar));
+    shared_ptr<internal_type> ce_boolean(new internal_type("Boolean", TYP_NATIVE_TYPE, ce_scalar));
     this->register_class(ce_boolean);
 
-    shared_ptr<internal_type> ce_integer(new internal_type("Integer", TYP_CLASS, ce_scalar));
+    shared_ptr<internal_type> ce_integer(new internal_type("Integer", TYP_NATIVE_TYPE, ce_scalar));
     this->register_class(ce_integer);
 
-    shared_ptr<internal_type> ce_float(new internal_type("Float", TYP_CLASS, ce_scalar));
+    shared_ptr<internal_type> ce_float(new internal_type("Float", TYP_NATIVE_TYPE, ce_scalar));
     this->register_class(ce_float);
 
     worker_binary_operator_registration(ce_integer, OP_ADD, shared_ptr<worker>(new scalar_worker_add<long, long>()), ce_integer);
@@ -229,18 +229,42 @@ standard_bundle::standard_bundle(string name): bundle(name)
     worker_binary_operator_registration(ce_float, OP_MOD, shared_ptr<worker>(new scalar_worker_mod<double, long>()), ce_integer);
     worker_binary_operator_registration(ce_float, OP_INTDIV, shared_ptr<worker>(new scalar_worker_intdiv<double, long>()), ce_integer);
 
-    shared_ptr<internal_type> ce_char(new internal_type("Char", TYP_CLASS, ce_mixed));
+    shared_ptr<internal_type> ce_char(new internal_type("Char", TYP_NATIVE_TYPE, ce_mixed));
     this->register_class(ce_char);
 
-    shared_ptr<internal_type> ce_composite(new internal_type("Composite", TYP_INTERFACE, ce_mixed));
+    shared_ptr<internal_type> ce_composite(new internal_type("Composite", TYP_NATIVE_TYPE, ce_mixed));
     this->register_class(ce_composite);
 
-    shared_ptr<internal_type> ce_string(new internal_type("String", TYP_INTERFACE, ce_composite));
+    shared_ptr<internal_type> ce_traversable(new internal_type("Traversable", TYP_INTERFACE));
+    ce_traversable->add_interface(ce_composite);
+    this->register_class(ce_traversable);
+
+    shared_ptr<internal_type> ce_iterator(new internal_type("Iterator", TYP_INTERFACE));
+    ce_iterator->add_interface(ce_traversable);
+    this->register_class(ce_iterator);
+
+    shared_ptr<internal_type> ce_iterator_aggregate(new internal_type("IteratorAggregate", TYP_INTERFACE));
+    ce_iterator_aggregate->add_interface(ce_traversable);
+    this->register_class(ce_iterator_aggregate);
+    ce_iterator_aggregate->add_method("getIterator", shared_ptr<callable_prototype>(new callable_prototype(ce_iterator)), nullptr, ACC_PUBLIC);
+
+    shared_ptr<internal_type> ce_countable(new internal_type("Countable", TYP_INTERFACE));
+    ce_countable->add_interface(ce_composite);
+    this->register_class(ce_countable);
+
+    shared_ptr<internal_type> ce_sortable(new internal_type("Sortable", TYP_INTERFACE));
+    ce_sortable->add_interface(ce_composite);
+    this->register_class(ce_sortable);
+
+    shared_ptr<internal_type> ce_string(new internal_type("String", TYP_NATIVE_TYPE, ce_composite));
+    ce_string->add_interface(ce_traversable);
+    ce_string->add_interface(ce_countable);
+    ce_string->add_interface(ce_sortable);
     this->register_class(ce_string);
 
     worker_ternary_operator_registration(ce_string, OP_OFFSET_SET, shared_ptr<worker>(new string_worker_offset_set<string>()), ce_integer, ce_char);
     worker_binary_operator_registration(ce_string, OP_OFFSET_GET, shared_ptr<worker>(new string_worker_offset_get<string>()), ce_integer);
-    worker_binary_operator_registration(ce_string, OP_ADD, shared_ptr<worker>(new string_worker_add<string>()), ce_string);
+    worker_binary_operator_registration(ce_string, OP_DOT, shared_ptr<worker>(new string_worker_add<string>()), ce_string);
 }
 
 
