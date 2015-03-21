@@ -97,12 +97,12 @@ public:
         return engine::operators_map[op];
     }
 
-    void static throw_exception(shared_ptr<internal_type> type, const char *message, long code = 0, shared_ptr<internal_value> previous = nullptr)
+    void static throw_exception(shared_ptr<internal_type>, const char *message, long = 0, shared_ptr<internal_value> = nullptr)
     {
         std::cerr << "An exception occured: " << message << std::endl;
     }
 
-    void static throw_exception(shared_ptr<internal_type> type, string &message, long code = 0, shared_ptr<internal_value> previous = nullptr)
+    void static throw_exception(shared_ptr<internal_type>, string &message, long = 0, shared_ptr<internal_value> = nullptr)
     {
         std::cerr << "An exception occured: " << message << std::endl;
     }
@@ -422,7 +422,7 @@ public:
     }
 };
 
-static ostream &
+inline static ostream &
 operator<< (ostream &ios, internal_value &val)
 {
     if (bool value = val.to<bool>()) {

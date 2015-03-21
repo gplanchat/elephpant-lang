@@ -10,7 +10,7 @@ namespace engine {
 
 using namespace std;
 
-bool worker::operator() (shared_ptr<internal_value> self, vector<shared_ptr<internal_value>> parameters, shared_ptr<internal_value> return_value)
+bool worker::operator() (shared_ptr<internal_value>, vector<shared_ptr<internal_value>>, shared_ptr<internal_value>)
 {
     return false;
 }
@@ -447,7 +447,7 @@ bundle::get_class(string name)
 }
 
 void
-bundle::merge(string ns, shared_ptr<bundle> sub_bundle)
+bundle::merge(string, shared_ptr<bundle> sub_bundle)
 {
     this->classes.insert(sub_bundle->classes.begin(), sub_bundle->classes.end());
 }

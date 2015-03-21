@@ -2,6 +2,78 @@
 #ifndef REPHP_ENGINE_VISITORS_H
 #define REPHP_ENGINE_VISITORS_H
 
+#include <iostream>
+#include <memory>
+#include <string>
+#include <map>
+#include <vector>
+
+#include <boost/variant.hpp>
+
+#include "engine.h"
+
+namespace rephp {
+
+namespace engine {
+
+namespace visitor {
+
+using namespace std;
+using namespace rephp::engine;
+
+class internal_value_stream_visitor: public boost::static_visitor<std::string>
+{
+public:
+    inline std::string operator() (bool value) const
+    {
+        return string(value ? "true" : "false");
+    }
+
+    inline std::string operator() (char value) const
+    {
+        return to_string(value);
+    }
+
+    inline std::string operator() (long value) const
+    {
+        return to_string(value);
+    }
+
+    inline std::string operator() (double value) const
+    {
+        return to_string(value);
+    }
+
+    inline std::string operator() (string value) const
+    {
+        return "\"" + value + "\"";
+    }
+
+    inline std::string operator() (vector<shared_ptr<internal_value>> value) const
+    {
+        return string("vector(") + to_string(value.size()) + ")";
+    }
+
+    inline std::string operator() (map<string,shared_ptr<internal_value>> value) const
+    {
+        return string("map(") + to_string(value.size()) + ")";
+    }
+
+    inline std::string operator() (shared_ptr<void>) const
+    {
+        return string("resource");
+    }
+};
+
+};
+
+};
+
+};
+
+/*
+
+
 
 template<typename T>
 class internal_value_scalar_get_visitor: public boost::static_visitor<T>
@@ -551,5 +623,5 @@ internal_value_resource_get_visitor::operator()<shared_ptr<void>> (shared_ptr<vo
 {
     return res;
 }
-
+*/
 #endif

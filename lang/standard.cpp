@@ -164,11 +164,13 @@ standard_bundle::standard_bundle(const char *const name): standard_bundle(string
 
 standard_bundle::standard_bundle(string name): bundle(name)
 {
+/*
     auto worker_unary_operator_registration = [](shared_ptr<internal_type> ce, engine_operator op, shared_ptr<worker> worker) {
         shared_ptr<callable_prototype> proto(new callable_prototype(ce));
 
         ce->add_operator(op, proto, worker);
     };
+*/
     auto worker_binary_operator_registration = [](shared_ptr<internal_type> ce, engine_operator op, shared_ptr<worker> worker, shared_ptr<internal_type> operand_ce) {
         shared_ptr<callable_prototype> proto(new callable_prototype(ce));
         proto->add_parameter("operand", operand_ce);
@@ -271,6 +273,12 @@ standard_bundle::standard_bundle(string name): bundle(name)
     ce_string->add_interface(ce_countable);
     ce_string->add_interface(ce_sortable);
     this->register_class(ce_string);
+
+    auto proto_string_foo = shared_ptr<callable_prototype>(new callable_prototype(ce_null));
+    proto_string_foo->add_parameter("param1", ce_integer);
+    proto_string_foo->add_parameter("param2", ce_string);
+    proto_string_foo->add_parameter("param3", ce_float, this->invoke("Float", 2.));
+    ce_string->add_method("sort", proto_string_foo, nullptr, ACC_PUBLIC);
 
     worker_ternary_operator_registration(ce_string, OP_OFFSET_SET, shared_ptr<worker>(new string_worker_offset_set<string>()), ce_integer, ce_char);
     worker_binary_operator_registration(ce_string, OP_OFFSET_GET, shared_ptr<worker>(new string_worker_offset_get<string>()), ce_integer);
