@@ -12,6 +12,9 @@
 
 #include <boost/variant.hpp>
 
+#include "types.h"
+#include "visitors.h"
+
 #define ADD_OPERATOR(op) {op, #op}
 
 namespace rephp {
@@ -31,78 +34,23 @@ namespace engine {
 
 using namespace std;
 
-typedef enum access_mode {
-    ACC_PUBLIC,
-    ACC_PROTECTED,
-    ACC_PRIVATE,
-    ACC_PACKAGE
-} access_mode_t;
-
-typedef enum class_type {
-    TYP_NATIVE_TYPE,
-    TYP_CLASS,
-    TYP_INTERFACE,
-    TYP_TRAIT,
-    TYP_ENUM
-} class_type_t;
-
-typedef enum engine_operator {
-    OP_ADD,
-    OP_SUB,
-    OP_MUL,
-    OP_DIV,
-    OP_MOD,
-    OP_INTDIV,
-    OP_AND,
-    OP_OR,
-    OP_XOR,
-    OP_NOT,
-    OP_BITWISE_AND,
-    OP_BITWISE_OR,
-    OP_BITWISE_XOR,
-    OP_BITWISE_NOT,
-    OP_LHS,
-    OP_RHS,
-    OP_OFFSET_SET,
-    OP_OFFSET_GET,
-    OP_OFFSET_UNSET,
-    OP_OFFSET_EXISTS,
-    OP_DOT
-} engine_operator_t;
-
-class worker;
-class callable_prototype;
-class method_entry;
-class internal_type;
-class internal_value;
-class bundle;
-
-typedef boost::variant<bool,char,long,double,string,vector<shared_ptr<internal_value>>,map<string,shared_ptr<internal_value>>,shared_ptr<void>> internal_variant_t;
-typedef map<string, pair<shared_ptr<internal_type>, shared_ptr<internal_value>>> parameters_map_t;
-typedef unordered_map<string, shared_ptr<internal_type>>                         class_map_t;
-typedef unordered_map<string, shared_ptr<internal_value>>                        const_map_t;
-typedef unordered_map<string, pair<shared_ptr<internal_type>, access_mode>>      attributes_map_t;
-typedef unordered_multimap<string, shared_ptr<method_entry>>                     methods_map_t;
-typedef unordered_multimap<engine_operator, shared_ptr<method_entry>>            operators_map_t;
-typedef unordered_map<string, shared_ptr<internal_value>>                        value_attributes_map_t;
-
 class engine
 {
 private:
-    static unordered_map<engine_operator_t, string> operators_map;
+    static std::map<type::operator_t,string> operators_map;
 
 public:
-    inline static const string &get_operator_string(engine_operator_t op)
+    inline static const type::string_t &get_operator_string(type::operator_t op)
     {
-        return engine::operators_map[op];
+        return operators_map[op];
     }
 
-    void static throw_exception(shared_ptr<internal_type>, const char *message, long = 0, shared_ptr<internal_value> = nullptr)
+    void static throw_exception(type::type_t, const char *message, long = 0, type::value_t = nullptr)
     {
         std::cerr << "An exception occured: " << message << std::endl;
     }
 
-    void static throw_exception(shared_ptr<internal_type>, string &message, long = 0, shared_ptr<internal_value> = nullptr)
+    void static throw_exception(type::type_t, type::string_t &message, long = 0, type::value_t = nullptr)
     {
         std::cerr << "An exception occured: " << message << std::endl;
     }
@@ -111,7 +59,7 @@ public:
 class worker
 {
 public:
-    bool operator() (shared_ptr<internal_value> self, vector<shared_ptr<internal_value>> parameters, shared_ptr<internal_value> return_value);
+    bool operator() (type::value_t self, type::vector_t parameters, type::value_t return_value);
 };
 
 class callable_prototype: public enable_shared_from_this<callable_prototype>
@@ -119,20 +67,20 @@ class callable_prototype: public enable_shared_from_this<callable_prototype>
     friend rephp::reflection::callable_prototype;
 
 private:
-    shared_ptr<internal_type> return_type;
-    parameters_map_t          parameters;
+    type::type_t return_type;
+    type::parameters_map_t parameters;
 
 public:
     callable_prototype();
-    callable_prototype(shared_ptr<internal_type> return_type);
+    callable_prototype(type::type_t return_type);
 
-    bool match(shared_ptr<callable_prototype> prototype);
-    bool call_match(vector<shared_ptr<internal_value>> params);
+    bool match(type::prototype_t prototype);
+    bool call_match(type::vector_t params);
 
-    void add_parameter(string name, shared_ptr<internal_type> parameter);
-    void add_parameter(string name, shared_ptr<internal_type> parameter, shared_ptr<internal_value> default_value);
+    void add_parameter(type::string_t name, type::type_t parameter);
+    void add_parameter(type::string_t name, type::type_t parameter, type::value_t default_value);
 
-    size_t count();
+    type::size_t count();
 };
 
 class method_entry: public enable_shared_from_this<method_entry>
@@ -140,17 +88,17 @@ class method_entry: public enable_shared_from_this<method_entry>
     friend rephp::reflection::method_entry;
 
 private:
-    shared_ptr<callable_prototype> prototype;
-    shared_ptr<worker>             worker_callable;
-    access_mode                    access;
+    type::prototype_t   prototype;
+    type::worker_t      worker;
+    type::access_mode_t access;
 
 public:
-    method_entry(shared_ptr<callable_prototype> prototype, shared_ptr<worker> cb, access_mode access);
+    method_entry(type::prototype_t prototype, type::worker_t cb, access_mode access);
 
-    bool matches_prototype(shared_ptr<callable_prototype> prototype);
+    bool matches_prototype(type::prototype_t prototype);
     bool matches_access_mode(access_mode mode);
 
-    //bool call(shared_ptr<internal_value> retval, map<string,shared_ptr<internal_value>> parameters, shared_ptr<internal_value> context);
+    //bool call(type::value_t retval, map<type::string_t,type::value_t> parameters, type::value_t context);
 };
 
 class internal_type: public enable_shared_from_this<internal_type>
@@ -158,45 +106,43 @@ class internal_type: public enable_shared_from_this<internal_type>
     friend rephp::reflection::internal_type;
 
 private:
-    shared_ptr<internal_type> parent;
-    class_map_t               interfaces;
-    class_map_t               traits;
-
-    string     package;
-    string     name;
-    class_type type;
-
-    const_map_t      consts;
-    attributes_map_t attributes;
-    methods_map_t    methods;
-    operators_map_t  operators;
+    type::type_t            parent;
+    type::classes_map_t     interfaces;
+    type::classes_map_t     traits;
+    type::string_t          package;
+    type::string_t          name;
+    type::class_type_t      type;
+    type::consts_map_t      consts;
+    type::attributes_map_t  attributes;
+    type::methods_map_t     methods;
+    type::operators_map_t   operators;
 
 public:
-    internal_type(string name, class_type type, shared_ptr<internal_type> parent = nullptr);
+    internal_type(type::string_t name, type::class_type_t type, type::type_t parent = nullptr);
 
-    void add_interface(shared_ptr<internal_type> interface);
-    void add_trait(shared_ptr<internal_type> trait);
-    void add_attribute(string name, shared_ptr<internal_type> type, access_mode access = ACC_PRIVATE);
-    void add_method(string name, shared_ptr<callable_prototype> prototype, shared_ptr<worker> cb, access_mode access = ACC_PRIVATE);
-    void add_operator(engine_operator op, shared_ptr<callable_prototype> prototype, shared_ptr<worker> cb, access_mode access = ACC_PUBLIC);
+    void add_interface(type::type_t interface);
+    void add_trait(type::type_t trait);
+    void add_attribute(type::string_t name, type::type_t type, access_mode access = ACC_PRIVATE);
+    void add_method(type::string_t name, type::prototype_t prototype, type::worker_t cb, access_mode access = ACC_PRIVATE);
+    void add_operator(engine_operator op, type::prototype_t prototype, type::worker_t cb, access_mode access = ACC_PUBLIC);
 
-    bool has_parent(string parent);
-    bool has_parent(shared_ptr<internal_type> parent);
-    bool has_interface(string interface);
-    bool has_interface(shared_ptr<internal_type> interface);
-    bool has_trait(string trait);
-    bool has_trait(shared_ptr<internal_type> trait);
-    bool has_trait_recursive(string trait);
-    bool has_trait_recursive(shared_ptr<internal_type> trait);
-    bool has_method(string name, shared_ptr<callable_prototype> prototype, shared_ptr<internal_value> context);
-    bool has_operator(engine_operator op, shared_ptr<callable_prototype> prototype, shared_ptr<internal_value> context);
-    bool has_attribute(string name, shared_ptr<internal_value> context);
+    bool has_parent(type::string_t parent);
+    bool has_parent(type::type_t parent);
+    bool has_interface(type::string_t interface);
+    bool has_interface(type::type_t interface);
+    bool has_trait(type::string_t trait);
+    bool has_trait(type::type_t trait);
+    bool has_trait_recursive(type::string_t trait);
+    bool has_trait_recursive(type::type_t trait);
+    bool has_method(type::string_t name, type::prototype_t prototype, type::value_t context);
+    bool has_operator(engine_operator op, type::prototype_t prototype, type::value_t context);
+    bool has_attribute(type::string_t name, type::value_t context);
 
-    shared_ptr<method_entry> find_method(string name, shared_ptr<callable_prototype> prototype, shared_ptr<internal_value> context);
-    shared_ptr<method_entry> find_operator(engine_operator op, shared_ptr<callable_prototype> prototype, shared_ptr<internal_value> context);
+    type::method_t find_method(type::string_t name, type::prototype_t prototype, type::value_t context);
+    type::method_t find_operator(engine_operator op, type::prototype_t prototype, type::value_t context);
 
-    string get_name();
-    shared_ptr<internal_type> get_parent();
+    type::string_t get_name();
+    type::type_t get_parent();
 };
 
 class internal_value: public enable_shared_from_this<internal_value>
@@ -204,14 +150,14 @@ class internal_value: public enable_shared_from_this<internal_value>
     friend rephp::reflection::internal_value;
 
 private:
-    shared_ptr<internal_type> type;
-    value_attributes_map_t    attributes;
-    internal_variant_t        raw_value;
+    type::type_t type;
+    type::value_attributes_map_t    attributes;
+    type::internal_variant_t        raw_value;
 
 public:
-    internal_value(shared_ptr<internal_type> type);
+    internal_value(type::type_t type);
 
-    shared_ptr<internal_type> get_type();
+    type::type_t get_type();
 
     template<typename T>
     inline T get() const;
@@ -228,10 +174,10 @@ public:
         return boost::get<T>(this->raw_value);
     }
 /*
-    inline shared_ptr<internal_value> call(string method_name, shared_ptr<internal_type> return_type, map<string,shared_ptr<internal_value>> parameters)
+    inline type::value_t call(type::string_t method_name, type::type_t return_type, map<type::string_t,type::value_t> parameters)
     {
-        shared_ptr<internal_value> retval;
-        shared_ptr<callable_prototype> proto(new callable_prototype())
+        type::value_t retval;
+        type::prototype_t proto(new callable_prototype())
 
         for (auto it = parameters.begin(); it != parameters.end(); ++it) {
             proto->add_parameter(it->first, it->second.get_type());
@@ -276,24 +222,31 @@ internal_value::get<double>() const
 }
 
 template<>
-inline string
-internal_value::get<string>() const
+inline type::string_t
+internal_value::get<type::string_t>() const
 {
-    return boost::get<string>(this->raw_value);
+    return boost::get<type::string_t>(this->raw_value);
 }
 
 template<>
-inline vector<shared_ptr<internal_value>>
-internal_value::get<vector<shared_ptr<internal_value>>>() const
+inline type::vector_t
+internal_value::get<type::vector_t>() const
 {
-    return boost::get<vector<shared_ptr<internal_value>>>(this->raw_value);
+    return boost::get<type::vector_t>(this->raw_value);
 }
 
 template<>
-inline map<string,shared_ptr<internal_value>>
-internal_value::get<map<string,shared_ptr<internal_value>>>() const
+inline type::map_t
+internal_value::get<type::map_t>() const
 {
-    return boost::get<map<string,shared_ptr<internal_value>>>(this->raw_value);
+    return boost::get<type::map_t>(this->raw_value);
+}
+
+template<>
+inline type::multimap_t
+internal_value::get<type::multimap_t>() const
+{
+    return boost::get<type::multimap_t>(this->raw_value);
 }
 
 template<>
@@ -354,21 +307,21 @@ internal_value::set<float>(float value)
 
 template<>
 inline void
-internal_value::set<string&>(string &value)
+internal_value::set<type::string_t&>(type::string_t &value)
 {
     this->raw_value = value;
 }
 
 template<>
 inline void
-internal_value::set<vector<shared_ptr<internal_value>>&>(vector<shared_ptr<internal_value>> &value)
+internal_value::set<type::vector_t&>(type::vector_t &value)
 {
     this->raw_value = value;
 }
 
 template<>
 inline void
-internal_value::set<map<string,shared_ptr<internal_value>>&>(map<string,shared_ptr<internal_value>> &value)
+internal_value::set<map<type::string_t,type::value_t>&>(map<type::string_t,type::value_t> &value)
 {
     this->raw_value = value;
 }
@@ -385,70 +338,39 @@ class bundle: public enable_shared_from_this<bundle>
     friend rephp::reflection::bundle;
 
 private:
-    typedef unordered_map<string, shared_ptr<internal_type>> classes_map_t;
-
-    string name;
-
-    classes_map_t classes;
+    type::string_t      name;
+    type::classes_map_t classes;
 
 protected:
-    void register_class(shared_ptr<internal_type> ce);
+    void register_class(type::type_t ce);
 
-    shared_ptr<internal_type> get_class(string name);
+    type::type_t get_class(type::string_t name);
 
 public:
     bundle(const char *const name);
-    bundle(string name);
+    bundle(type::string_t name);
 
-    void merge(string ns, shared_ptr<bundle> sub_bundle);
+    void merge(type::string_t ns, type::bundle_t sub_bundle);
 
-    string get_name();
+    type::string_t get_name();
 
     template<typename T>
-    inline shared_ptr<internal_value> invoke(const char *name, T value)
+    inline type::value_t invoke(const char *name, T value)
     {
-        string str(name);
+        type::string_t str(name);
         return this->invoke<T>(str, value);
     }
 
     template<typename T>
-    inline shared_ptr<internal_value> invoke(string &name, T value)
+    inline type::value_t invoke(type::string_t &name, T value)
     {
         auto type = this->get_class(name);
 
-        shared_ptr<internal_value> item(new internal_value(type));
+        type::value_t item(new internal_value(type));
         item->set<T>(value);
         return item;
     }
 };
-
-inline static ostream &
-operator<< (ostream &ios, internal_value &val)
-{
-    if (bool value = val.to<bool>()) {
-        ios << (value);
-    } else if (char value = val.to<char>()) {
-       ios << (value);
-    } else if (long value = val.to<long>()) {
-       ios << (value);
-    } else if (double value = val.to<double>()) {
-       ios << (value);
-//    } else if (string value = val.to<string>()) {
-//       ios << (value);
-//    } else if (vector<shared_ptr<internal_value>> value = val.to<vector<shared_ptr<internal_value>>>()) {
-//       ios << (*value);
-//        ios << "vector(" << value.size() << ")";
-//    } else if (map<string,shared_ptr<internal_value>> value = val.to<map<string,shared_ptr<internal_value>>>()) {
-//       ios << (*value);
-//        ios << "map(" << value.size() << ")";
-//    } else if (shared_ptr<void> value = val.to<shared_ptr<void>>()) {
-//       ios << (value);
-    } else {
-        ios << "<invalid>";
-    }
-
-    return ios;
-}
 
 };
 

@@ -10,7 +10,7 @@ namespace engine {
 
 using namespace std;
 
-bool worker::operator() (shared_ptr<internal_value>, vector<shared_ptr<internal_value>>, shared_ptr<internal_value>)
+bool worker::operator() (type::value_t, type::vector_t, type::value_t)
 {
     return false;
 }
@@ -18,36 +18,36 @@ bool worker::operator() (shared_ptr<internal_value>, vector<shared_ptr<internal_
 callable_prototype::callable_prototype()
 {}
 
-callable_prototype::callable_prototype(shared_ptr<internal_type> return_type) :
+callable_prototype::callable_prototype(type::type_t return_type) :
     return_type(return_type)
 {}
 
 bool
-callable_prototype::match(shared_ptr<callable_prototype> prototype)
+callable_prototype::match(type::prototype_t prototype)
 {
     return equal(
         this->parameters.begin(),
         this->parameters.end(),
         prototype->parameters.begin(),
         prototype->parameters.end(),
-        [](parameters_map_t::value_type left, parameters_map_t::value_type right) {
-            return left.first == right.first;
+        [](type::parameters_map_t::value_type left, type::parameters_map_t::value_type right) {
+            return type::get_key(left) == type::get_key(right);
         }
     );
 }
 
 bool
-callable_prototype::call_match(vector<shared_ptr<internal_value>> params)
+callable_prototype::call_match(type::vector_t params)
 {
     bool passed_mandatory = false;
     auto it = this->parameters.begin();
     auto cur = params.begin();
     for (;it != this->parameters.end() && cur != params.end(); ++it, ++cur) {
-        if (it->second.second != nullptr) {
+        if (type::get_parameter_type(*it) != nullptr) {
             passed_mandatory = true;
         }
         auto cur_type = (*cur)->get_type();
-        if (cur_type != it->second.second->get_type() && !cur_type->has_parent(it->first) && !cur_type->has_interface(it->first)) {
+        if (cur_type != type::get_parameter_value(*it)->get_type() && !cur_type->has_parent(type::get_key(*it)) && !cur_type->has_interface(type::get_key(*it))) {
             return false;
         }
     }
@@ -56,29 +56,29 @@ callable_prototype::call_match(vector<shared_ptr<internal_value>> params)
 }
 
 void
-callable_prototype::add_parameter(string name, shared_ptr<internal_type> parameter)
+callable_prototype::add_parameter(type::string_t name, type::type_t parameter)
 {
-    this->parameters[name] = parameters_map_t::mapped_type(parameter, nullptr);
+    this->parameters[name] = type::parameters_map_t::mapped_type(parameter, nullptr);
 }
 
 void
-callable_prototype::add_parameter(string name, shared_ptr<internal_type> parameter, shared_ptr<internal_value> default_value)
+callable_prototype::add_parameter(type::string_t name, type::type_t parameter, type::value_t default_value)
 {
-    this->parameters[name] = parameters_map_t::mapped_type(parameter, default_value);
+    this->parameters[name] = type::parameters_map_t::mapped_type(parameter, default_value);
 }
 
-size_t
+type::size_t
 callable_prototype::count()
 {
     return this->parameters.size();
 }
 
-method_entry::method_entry(shared_ptr<callable_prototype> prototype, shared_ptr<worker> cb, access_mode access):
-    prototype(prototype), worker_callable(cb), access(access)
+method_entry::method_entry(type::prototype_t prototype, type::worker_t cb, access_mode access):
+    prototype(prototype), worker(cb), access(access)
 {}
 
 bool
-method_entry::matches_prototype(shared_ptr<callable_prototype> prototype)
+method_entry::matches_prototype(type::prototype_t prototype)
 {
     return this->prototype->match(prototype);
 }
@@ -89,46 +89,46 @@ method_entry::matches_access_mode(access_mode mode)
     return this->access == mode;
 }
 
-internal_type::internal_type(string name, class_type type, shared_ptr<internal_type> parent):
+internal_type::internal_type(type::string_t name, class_type type, type::type_t parent):
     parent(parent),
     name(name),
     type(type)
 {}
 
 void
-internal_type::add_interface(shared_ptr<internal_type> interface)
+internal_type::add_interface(type::type_t interface)
 {
     this->interfaces[interface->get_name()] = interface;
 }
 
 void
-internal_type::add_trait(shared_ptr<internal_type> trait)
+internal_type::add_trait(type::type_t trait)
 {
     this->traits[trait->get_name()] = trait;
 }
 
 void
-internal_type::add_attribute(string name, shared_ptr<internal_type> type, access_mode access)
+internal_type::add_attribute(type::string_t name, type::type_t type, access_mode access)
 {
-    this->attributes[name] = attributes_map_t::mapped_type(type, access);
+    this->attributes[name] = type::attributes_map_t::mapped_type(type, access);
 }
 
 void
-internal_type::add_method(string name, shared_ptr<callable_prototype> prototype, shared_ptr<worker> cb, access_mode access)
+internal_type::add_method(type::string_t name, type::prototype_t prototype, type::worker_t cb, access_mode access)
 {
-    shared_ptr<method_entry> me(new method_entry(prototype, cb, access));
+    type::method_t me(new method_entry(prototype, cb, access));
     this->methods.insert(make_pair(name, me));
 }
 
 void
-internal_type::add_operator(engine_operator op, shared_ptr<callable_prototype> prototype, shared_ptr<worker> cb, access_mode access)
+internal_type::add_operator(engine_operator op, type::prototype_t prototype, type::worker_t cb, access_mode access)
 {
-    shared_ptr<method_entry> oe(new method_entry(prototype, cb, access));
+    type::method_t oe(new method_entry(prototype, cb, access));
     this->operators.insert(make_pair(op, oe));
 }
 
 bool
-internal_type::has_parent(string parent)
+internal_type::has_parent(type::string_t parent)
 {
     if (!this->parent) {
         return false;
@@ -142,7 +142,7 @@ internal_type::has_parent(string parent)
 }
 
 bool
-internal_type::has_parent(shared_ptr<internal_type> parent)
+internal_type::has_parent(type::type_t parent)
 {
     if (!this->parent) {
         return false;
@@ -156,13 +156,13 @@ internal_type::has_parent(shared_ptr<internal_type> parent)
 }
 
 bool
-internal_type::has_interface(string interface)
+internal_type::has_interface(type::string_t interface)
 {
     for (auto it = this->interfaces.begin(); it != this->interfaces.end(); ++it) {
-        if (it->first == interface) {
+        if (type::get_key(*it) == interface) {
             return true;
         }
-        if (it->second->has_interface(interface)) {
+        if (type::get_value(*it)->has_interface(interface)) {
             return true;
         }
     }
@@ -171,13 +171,13 @@ internal_type::has_interface(string interface)
 }
 
 bool
-internal_type::has_interface(shared_ptr<internal_type> interface)
+internal_type::has_interface(type::type_t interface)
 {
     for (auto it = this->interfaces.begin(); it != this->interfaces.end(); ++it) {
-        if (it->second == interface) {
+        if (type::get_value(*it) == interface) {
             return true;
         }
-        if (it->second->has_interface(interface)) {
+        if (type::get_value(*it)->has_interface(interface)) {
             return true;
         }
     }
@@ -186,10 +186,10 @@ internal_type::has_interface(shared_ptr<internal_type> interface)
 }
 
 bool
-internal_type::has_trait(string trait)
+internal_type::has_trait(type::string_t trait)
 {
-    auto found = find_if(this->traits.begin(), this->traits.end(), [&](class_map_t::value_type current) {
-        if (current.second->get_name() == trait) {
+    auto found = find_if(this->traits.begin(), this->traits.end(), [&](type::classes_map_t::value_type current) {
+        if (type::get_value(current)->get_name() == trait) {
             return true;
         }
         return false;
@@ -199,10 +199,10 @@ internal_type::has_trait(string trait)
 }
 
 bool
-internal_type::has_trait(shared_ptr<internal_type> trait)
+internal_type::has_trait(type::type_t trait)
 {
-    auto found = find_if(this->traits.begin(), this->traits.end(), [&](class_map_t::value_type current) {
-        if (current.second == trait) {
+    auto found = find_if(this->traits.begin(), this->traits.end(), [&](type::classes_map_t::value_type current) {
+        if (type::get_value(current) == trait) {
             return true;
         }
         return false;
@@ -212,13 +212,13 @@ internal_type::has_trait(shared_ptr<internal_type> trait)
 }
 
 bool
-internal_type::has_trait_recursive(string trait)
+internal_type::has_trait_recursive(type::string_t trait)
 {
-    auto found = find_if(this->traits.begin(), this->traits.end(), [&](class_map_t::value_type current){
-        if (current.second->get_name() == trait) {
+    auto found = find_if(this->traits.begin(), this->traits.end(), [&](type::classes_map_t::value_type current){
+        if (type::get_value(current)->get_name() == trait) {
             return true;
         }
-        if (current.second->has_trait(trait)) {
+        if (type::get_value(current)->has_trait(trait)) {
             return true;
         }
         return false;
@@ -228,13 +228,13 @@ internal_type::has_trait_recursive(string trait)
 }
 
 bool
-internal_type::has_trait_recursive(shared_ptr<internal_type> trait)
+internal_type::has_trait_recursive(type::type_t trait)
 {
-    auto found = find_if(this->traits.begin(), this->traits.end(), [&](class_map_t::value_type current){
-        if (current.second == trait) {
+    auto found = find_if(this->traits.begin(), this->traits.end(), [&](type::classes_map_t::value_type current){
+        if (type::get_value(current) == trait) {
             return true;
         }
-        if (current.second->has_trait(trait)) {
+        if (type::get_value(current)->has_trait(trait)) {
             return true;
         }
         return false;
@@ -243,8 +243,8 @@ internal_type::has_trait_recursive(shared_ptr<internal_type> trait)
     return found != this->traits.end();
 }
 
-shared_ptr<method_entry>
-internal_type::find_method(string name, shared_ptr<callable_prototype> prototype, shared_ptr<internal_value> context)
+type::method_t
+internal_type::find_method(type::string_t name, type::prototype_t prototype, type::value_t context)
 {
     auto range = this->methods.equal_range(name);
     if (range.first == range.second) {
@@ -254,12 +254,12 @@ internal_type::find_method(string name, shared_ptr<callable_prototype> prototype
     auto context_type = context->get_type();
     auto this_shared = shared_from_this();
 
-    auto found = find_if(range.first, range.second, [&](methods_map_t::value_type &method) {
-        if (!method.second->matches_prototype(prototype)) {
+    auto found = find_if(range.first, range.second, [&](type::methods_map_t::value_type &method) {
+        if (!type::get_value(method)->matches_prototype(prototype)) {
             return false;
         }
 
-        if (this_shared == context_type || method.second->matches_access_mode(ACC_PUBLIC)) {
+        if (this_shared == context_type || type::get_value(method)->matches_access_mode(ACC_PUBLIC)) {
             return true;
         }
 
@@ -269,7 +269,7 @@ internal_type::find_method(string name, shared_ptr<callable_prototype> prototype
             }
         } else if (this->type == TYP_CLASS) {
             if (context_type->has_parent(this_shared)) {
-                if (method.second->matches_access_mode(ACC_PROTECTED)) {
+                if (type::get_value(method)->matches_access_mode(ACC_PROTECTED)) {
                     return true;
                 }
 
@@ -279,7 +279,7 @@ internal_type::find_method(string name, shared_ptr<callable_prototype> prototype
             return false;
         } else if (this->type == TYP_INTERFACE) {
             if (context_type->has_interface(this_shared)) {
-                if (method.second->matches_access_mode(ACC_PROTECTED)) {
+                if (type::get_value(method)->matches_access_mode(ACC_PROTECTED)) {
                     return true;
                 }
 
@@ -298,13 +298,13 @@ internal_type::find_method(string name, shared_ptr<callable_prototype> prototype
 }
 
 bool
-internal_type::has_method(string name, shared_ptr<callable_prototype> prototype, shared_ptr<internal_value> context)
+internal_type::has_method(type::string_t name, type::prototype_t prototype, type::value_t context)
 {
     return this->find_method(name, prototype, context) != nullptr;
 }
 
-shared_ptr<method_entry>
-internal_type::find_operator(engine_operator op, shared_ptr<callable_prototype> prototype, shared_ptr<internal_value> context)
+type::method_t
+internal_type::find_operator(engine_operator op, type::prototype_t prototype, type::value_t context)
 {
     auto range = this->operators.equal_range(op);
     if (range.first == range.second) {
@@ -314,12 +314,12 @@ internal_type::find_operator(engine_operator op, shared_ptr<callable_prototype> 
     auto context_type = context->get_type();
     auto this_shared = shared_from_this();
 
-    auto found = find_if(range.first, range.second, [&](operators_map_t::value_type &op) {
-        if (!op.second->matches_prototype(prototype)) {
+    auto found = find_if(range.first, range.second, [&](type::operators_map_t::value_type &op) {
+        if (!type::get_value(op)->matches_prototype(prototype)) {
             return false;
         }
 
-        if (this_shared == context_type || op.second->matches_access_mode(ACC_PUBLIC)) {
+        if (this_shared == context_type || type::get_value(op)->matches_access_mode(ACC_PUBLIC)) {
             return true;
         }
 
@@ -329,7 +329,7 @@ internal_type::find_operator(engine_operator op, shared_ptr<callable_prototype> 
             }
         } else if (this->type == TYP_CLASS) {
             if (context_type->has_parent(this_shared)) {
-                if (op.second->matches_access_mode(ACC_PROTECTED)) {
+                if (type::get_value(op)->matches_access_mode(ACC_PROTECTED)) {
                     return true;
                 }
 
@@ -339,7 +339,7 @@ internal_type::find_operator(engine_operator op, shared_ptr<callable_prototype> 
             return false;
         } else if (this->type == TYP_INTERFACE) {
             if (context_type->has_interface(this_shared)) {
-                if (op.second->matches_access_mode(ACC_PROTECTED)) {
+                if (type::get_value(op)->matches_access_mode(ACC_PROTECTED)) {
                     return true;
                 }
 
@@ -358,13 +358,13 @@ internal_type::find_operator(engine_operator op, shared_ptr<callable_prototype> 
 }
 
 bool
-internal_type::has_operator(engine_operator op, shared_ptr<callable_prototype> prototype, shared_ptr<internal_value> context)
+internal_type::has_operator(engine_operator op, type::prototype_t prototype, type::value_t context)
 {
     return this->find_operator(op, prototype, context) != nullptr;
 }
 
 bool
-internal_type::has_attribute(string name, shared_ptr<internal_value> context)
+internal_type::has_attribute(type::string_t name, type::value_t context)
 {
     auto it = this->attributes.find(name);
     if (it == this->attributes.end()) {
@@ -374,7 +374,7 @@ internal_type::has_attribute(string name, shared_ptr<internal_value> context)
     auto context_type = context->get_type();
     auto this_shared = shared_from_this();
 
-    if (this_shared == context_type || it->second.second == ACC_PUBLIC) {
+    if (this_shared == context_type || type::get_attribute_access_mode(*it) == ACC_PUBLIC) {
         return true;
     }
 
@@ -384,7 +384,7 @@ internal_type::has_attribute(string name, shared_ptr<internal_value> context)
         }
     } else if (this->type == TYP_CLASS) {
         if (context_type->has_parent(this_shared)) {
-            if (it->second.second == ACC_PROTECTED) {
+            if (type::get_attribute_access_mode(*it) == ACC_PROTECTED) {
                 return true;
             }
 
@@ -394,7 +394,7 @@ internal_type::has_attribute(string name, shared_ptr<internal_value> context)
         return false;
     } else if (this->type == TYP_INTERFACE) {
         if (context_type->has_interface(this_shared)) {
-            if (it->second.second == ACC_PROTECTED) {
+            if (type::get_attribute_access_mode(*it) == ACC_PROTECTED) {
                 return true;
             }
 
@@ -405,24 +405,24 @@ internal_type::has_attribute(string name, shared_ptr<internal_value> context)
     return false;
 }
 
-string
+type::string_t
 internal_type::get_name()
 {
     return name;
 }
 
-shared_ptr<internal_type>
+type::type_t
 internal_type::get_parent()
 {
     return parent;
 }
 
 
-internal_value::internal_value(shared_ptr<internal_type> type):
+internal_value::internal_value(type::type_t type):
     type(type)
 {}
 
-shared_ptr<internal_type>
+type::type_t
 internal_value::get_type()
 {
     return this->type;
@@ -431,40 +431,40 @@ internal_value::get_type()
 bundle::bundle(const char *const name): name(name)
 {}
 
-bundle::bundle(string name): name(name)
+bundle::bundle(type::string_t name): name(name)
 {}
 
 void
-bundle::register_class(shared_ptr<internal_type> ce)
+bundle::register_class(type::type_t ce)
 {
     this->classes[ce->get_name()] = ce;
 }
 
-shared_ptr<internal_type>
-bundle::get_class(string name)
+type::type_t
+bundle::get_class(type::string_t name)
 {
     return this->classes[name];
 }
 
 void
-bundle::merge(string, shared_ptr<bundle> sub_bundle)
+bundle::merge(type::string_t, type::bundle_t sub_bundle)
 {
     this->classes.insert(sub_bundle->classes.begin(), sub_bundle->classes.end());
 }
 
-string
+type::string_t
 bundle::get_name()
 {
     return this->name;
 }
 
 template<>
-inline shared_ptr<internal_value>
-bundle::invoke<short>(string &name, short value)
+inline type::value_t
+bundle::invoke<short>(type::string_t &name, short value)
 {
     auto type = this->get_class(name);
 
-    shared_ptr<internal_value> item(new internal_value(type));
+    type::value_t item(new internal_value(type));
     long var = static_cast<long>(value);
     item->set<long>(var);
 
@@ -472,12 +472,12 @@ bundle::invoke<short>(string &name, short value)
 }
 
 template<>
-inline shared_ptr<internal_value>
-bundle::invoke<int>(string &name, int value)
+inline type::value_t
+bundle::invoke<int>(type::string_t &name, int value)
 {
     auto type = this->get_class(name);
 
-    shared_ptr<internal_value> item(new internal_value(type));
+    type::value_t item(new internal_value(type));
     long var = static_cast<long>(value);
     item->set<long>(var);
 
@@ -485,19 +485,19 @@ bundle::invoke<int>(string &name, int value)
 }
 
 template<>
-inline shared_ptr<internal_value>
-bundle::invoke<float>(string &name, float value)
+inline type::value_t
+bundle::invoke<float>(type::string_t &name, float value)
 {
     auto type = this->get_class(name);
 
-    shared_ptr<internal_value> item(new internal_value(type));
+    type::value_t item(new internal_value(type));
     double var = static_cast<double>(value);
     item->set<double>(var);
 
     return item;
 }
 
-unordered_map<engine_operator_t, string> engine::operators_map = {
+std::map<type::operator_t,string> engine::operators_map = {
     ADD_OPERATOR(OP_ADD),
     ADD_OPERATOR(OP_SUB),
     ADD_OPERATOR(OP_MUL),

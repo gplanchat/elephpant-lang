@@ -11,6 +11,7 @@
 #include <boost/variant.hpp>
 
 #include "engine.h"
+#include "types.h"
 
 namespace rephp {
 
@@ -21,47 +22,77 @@ namespace visitor {
 using namespace std;
 using namespace rephp::engine;
 
-class internal_value_stream_visitor: public boost::static_visitor<std::string>
+class internal_value_stream_visitor: public boost::static_visitor<type::string_t>
 {
 public:
-    inline std::string operator() (bool value) const
+    inline type::string_t operator() (type::boolean_t value) const
     {
-        return string(value ? "true" : "false");
+        return type::string_t(value ? "true" : "false");
     }
 
-    inline std::string operator() (char value) const
-    {
-        return to_string(value);
-    }
-
-    inline std::string operator() (long value) const
+    inline type::string_t operator() (type::character_t value) const
     {
         return to_string(value);
     }
 
-    inline std::string operator() (double value) const
+    inline type::string_t operator() (type::integer_t value) const
     {
         return to_string(value);
     }
 
-    inline std::string operator() (string value) const
+    inline type::string_t operator() (type::float_t value) const
+    {
+        return to_string(value);
+    }
+
+    inline type::string_t operator() (type::string_t value) const
     {
         return "\"" + value + "\"";
     }
 
-    inline std::string operator() (vector<shared_ptr<internal_value>> value) const
+    inline type::string_t operator() (type::vector_t value) const
     {
         return string("vector(") + to_string(value.size()) + ")";
     }
 
-    inline std::string operator() (map<string,shared_ptr<internal_value>> value) const
+    inline type::string_t operator() (type::list_t value) const
     {
-        return string("map(") + to_string(value.size()) + ")";
+        return string("list(") + to_string(value.size()) + ")";
     }
 
-    inline std::string operator() (shared_ptr<void>) const
+    inline type::string_t operator() (type::map_t value) const
     {
-        return string("resource");
+        return type::string_t("map(") + to_string(value.size()) + ")";
+    }
+
+    inline type::string_t operator() (type::multimap_t value) const
+    {
+        return type::string_t("multimap(") + to_string(value.size()) + ")";
+    }
+
+    inline type::string_t operator() (type::registry_t value) const
+    {
+        return type::string_t("registry(") + to_string(value.size()) + ")";
+    }
+
+    inline type::string_t operator() (type::repository_t value) const
+    {
+        return type::string_t("repository(") + to_string(value.size()) + ")";
+    }
+
+    inline type::string_t operator() (type::stream_t) const
+    {
+        return type::string_t("stream");
+    }
+
+    inline type::string_t operator() (type::worker_t) const
+    {
+        return type::string_t("worker");
+    }
+
+    inline type::string_t operator() (type::resource_t) const
+    {
+        return type::string_t("resource");
     }
 };
 
@@ -83,25 +114,25 @@ public:
     T operator() (U value) const;
 };
 
-class internal_value_string_get_visitor: public boost::static_visitor<string>
+class internal_value_string_get_visitor: public boost::static_visitor<type::string_t>
 {
 public:
     template<typename T>
-    string operator() (T value) const;
+    type::string_t operator() (T value) const;
 };
 
-class internal_value_vector_get_visitor: public boost::static_visitor<vector<shared_ptr<internal_value>>>
+class internal_value_vector_get_visitor: public boost::static_visitor<type::vector_t>
 {
 public:
     template<typename T>
-    vector<shared_ptr<internal_value>> operator() (T value) const;
+    type::vector_t operator() (T value) const;
 };
 
-class internal_value_map_get_visitor: public boost::static_visitor<map<string,shared_ptr<internal_value>>>
+class internal_value_map_get_visitor: public boost::static_visitor<map<type::string_t,type::value_t>>
 {
 public:
     template<typename T>
-    map<string,shared_ptr<internal_value>> operator() (T value) const;
+    map<type::string_t,type::value_t> operator() (T value) const;
 };
 
 class internal_value_resource_get_visitor: public boost::static_visitor<shared_ptr<void>>
@@ -146,7 +177,7 @@ internal_value_scalar_get_visitor<bool>::operator()<double> (double value) const
 template<>
 template<>
 bool
-internal_value_scalar_get_visitor<bool>::operator()<string> (string) const
+internal_value_scalar_get_visitor<bool>::operator()<type::string_t> (type::string_t) const
 {
     engine::engine::throw_exception(nullptr, "cast from string to boolean is not allowed.");
     return 0;
@@ -155,7 +186,7 @@ internal_value_scalar_get_visitor<bool>::operator()<string> (string) const
 template<>
 template<>
 bool
-internal_value_scalar_get_visitor<bool>::operator()<vector<shared_ptr<internal_value>>> (vector<shared_ptr<internal_value>>) const
+internal_value_scalar_get_visitor<bool>::operator()<type::vector_t> (type::vector_t) const
 {
     engine::engine::throw_exception(nullptr, "cast from vector to boolean is not allowed.");
     return 0;
@@ -164,7 +195,7 @@ internal_value_scalar_get_visitor<bool>::operator()<vector<shared_ptr<internal_v
 template<>
 template<>
 bool
-internal_value_scalar_get_visitor<bool>::operator()<map<string,shared_ptr<internal_value>>> (map<string,shared_ptr<internal_value>>) const
+internal_value_scalar_get_visitor<bool>::operator()<map<type::string_t,type::value_t>> (map<type::string_t,type::value_t>) const
 {
     engine::engine::throw_exception(nullptr, "cast from map to boolean is not allowed.");
     return 0;
@@ -214,7 +245,7 @@ internal_value_scalar_get_visitor<char>::operator()<double> (double value) const
 template<>
 template<>
 char
-internal_value_scalar_get_visitor<char>::operator()<string> (string) const
+internal_value_scalar_get_visitor<char>::operator()<type::string_t> (type::string_t) const
 {
     engine::engine::throw_exception(nullptr, "cast from string to character is not allowed.");
     return 0;
@@ -223,7 +254,7 @@ internal_value_scalar_get_visitor<char>::operator()<string> (string) const
 template<>
 template<>
 char
-internal_value_scalar_get_visitor<char>::operator()<vector<shared_ptr<internal_value>>> (vector<shared_ptr<internal_value>>) const
+internal_value_scalar_get_visitor<char>::operator()<type::vector_t> (type::vector_t) const
 {
     engine::engine::throw_exception(nullptr, "cast from vector to character is not allowed.");
     return 0;
@@ -232,7 +263,7 @@ internal_value_scalar_get_visitor<char>::operator()<vector<shared_ptr<internal_v
 template<>
 template<>
 char
-internal_value_scalar_get_visitor<char>::operator()<map<string,shared_ptr<internal_value>>> (map<string,shared_ptr<internal_value>>) const
+internal_value_scalar_get_visitor<char>::operator()<map<type::string_t,type::value_t>> (map<type::string_t,type::value_t>) const
 {
     engine::engine::throw_exception(nullptr, "cast from map to character is not allowed.");
     return 0;
@@ -282,7 +313,7 @@ internal_value_scalar_get_visitor<long>::operator()<double> (double value) const
 template<>
 template<>
 long
-internal_value_scalar_get_visitor<long>::operator()<string> (string) const
+internal_value_scalar_get_visitor<long>::operator()<type::string_t> (type::string_t) const
 {
     engine::engine::throw_exception(nullptr, "cast from string to integer is not allowed.");
     return 0;
@@ -291,7 +322,7 @@ internal_value_scalar_get_visitor<long>::operator()<string> (string) const
 template<>
 template<>
 long
-internal_value_scalar_get_visitor<long>::operator()<vector<shared_ptr<internal_value>>> (vector<shared_ptr<internal_value>>) const
+internal_value_scalar_get_visitor<long>::operator()<type::vector_t> (type::vector_t) const
 {
     engine::engine::throw_exception(nullptr, "cast from vector to integer is not allowed.");
     return 0;
@@ -300,7 +331,7 @@ internal_value_scalar_get_visitor<long>::operator()<vector<shared_ptr<internal_v
 template<>
 template<>
 long
-internal_value_scalar_get_visitor<long>::operator()<map<string,shared_ptr<internal_value>>> (map<string,shared_ptr<internal_value>>) const
+internal_value_scalar_get_visitor<long>::operator()<map<type::string_t,type::value_t>> (map<type::string_t,type::value_t>) const
 {
     engine::engine::throw_exception(nullptr, "cast from map to integer is not allowed.");
     return 0;
@@ -350,7 +381,7 @@ internal_value_scalar_get_visitor<double>::operator()<double> (double value) con
 template<>
 template<>
 double
-internal_value_scalar_get_visitor<double>::operator()<string> (string) const
+internal_value_scalar_get_visitor<double>::operator()<type::string_t> (type::string_t) const
 {
     engine::engine::throw_exception(nullptr, "cast from string to float is not allowed.");
     return 0;
@@ -359,7 +390,7 @@ internal_value_scalar_get_visitor<double>::operator()<string> (string) const
 template<>
 template<>
 double
-internal_value_scalar_get_visitor<double>::operator()<vector<shared_ptr<internal_value>>> (vector<shared_ptr<internal_value>>) const
+internal_value_scalar_get_visitor<double>::operator()<type::vector_t> (type::vector_t) const
 {
     engine::engine::throw_exception(nullptr, "cast from vector to float is not allowed.");
     return 0;
@@ -368,7 +399,7 @@ internal_value_scalar_get_visitor<double>::operator()<vector<shared_ptr<internal
 template<>
 template<>
 double
-internal_value_scalar_get_visitor<double>::operator()<map<string,shared_ptr<internal_value>>> (map<string,shared_ptr<internal_value>>) const
+internal_value_scalar_get_visitor<double>::operator()<map<type::string_t,type::value_t>> (map<type::string_t,type::value_t>) const
 {
     engine::engine::throw_exception(nullptr, "cast from map to float is not allowed.");
     return 0;
@@ -384,181 +415,181 @@ internal_value_scalar_get_visitor<double>::operator()<shared_ptr<void>> (shared_
 }
 
 template<>
-string internal_value_string_get_visitor::operator()<bool> (bool value) const
+type::string_t internal_value_string_get_visitor::operator()<bool> (bool value) const
 {
     return value ? "true" : "false";
 }
 
 template<>
-string internal_value_string_get_visitor::operator()<char> (char value) const
+type::string_t internal_value_string_get_visitor::operator()<char> (char value) const
 {
     return to_string(value);
 }
 
 template<>
-string internal_value_string_get_visitor::operator()<long> (long value) const
+type::string_t internal_value_string_get_visitor::operator()<long> (long value) const
 {
     return to_string(value);
 }
 
 template<>
-string internal_value_string_get_visitor::operator()<double> (double value) const
+type::string_t internal_value_string_get_visitor::operator()<double> (double value) const
 {
     return to_string(value);
 }
 
 template<>
-string internal_value_string_get_visitor::operator()<string> (string str) const
+type::string_t internal_value_string_get_visitor::operator()<type::string_t> (type::string_t str) const
 {
     return str;
 }
 
 template<>
-string internal_value_string_get_visitor::operator()<vector<shared_ptr<internal_value>>> (vector<shared_ptr<internal_value>>) const
+type::string_t internal_value_string_get_visitor::operator()<type::vector_t> (type::vector_t) const
 {
     engine::engine::throw_exception(nullptr, "cast from vector to string is not allowed.");
-    string str = "vector";
+    type::string_t str = "vector";
     return str;
 }
 
 template<>
-string internal_value_string_get_visitor::operator()<map<string,shared_ptr<internal_value>>> (map<string,shared_ptr<internal_value>>) const
+type::string_t internal_value_string_get_visitor::operator()<map<type::string_t,type::value_t>> (map<type::string_t,type::value_t>) const
 {
     engine::engine::throw_exception(nullptr, "cast from map to string is not allowed.");
-    return string("map");
+    return type::string_t("map");
 }
 
 template<>
-string internal_value_string_get_visitor::operator()<shared_ptr<void>> (shared_ptr<void>) const
+type::string_t internal_value_string_get_visitor::operator()<shared_ptr<void>> (shared_ptr<void>) const
 {
     engine::engine::throw_exception(nullptr, "cast from resource to string is not allowed.");
-    return string("resource");
+    return type::string_t("resource");
 }
 
 template<>
-vector<shared_ptr<internal_value>>
+type::vector_t
 internal_value_vector_get_visitor::operator()<bool> (bool) const
 {
     engine::engine::throw_exception(nullptr, "cast from boolean to vector is not allowed.");
-    return vector<shared_ptr<internal_value>>();
+    return type::vector_t();
 }
 
 template<>
-vector<shared_ptr<internal_value>>
+type::vector_t
 internal_value_vector_get_visitor::operator()<char> (char) const
 {
     engine::engine::throw_exception(nullptr, "cast from character to vector is not allowed.");
-    return vector<shared_ptr<internal_value>>();
+    return type::vector_t();
 }
 
 template<>
-vector<shared_ptr<internal_value>>
+type::vector_t
 internal_value_vector_get_visitor::operator()<long> (long) const
 {
     engine::engine::throw_exception(nullptr, "cast from integer to vector is not allowed.");
-    return vector<shared_ptr<internal_value>>();
+    return type::vector_t();
 }
 
 template<>
-vector<shared_ptr<internal_value>>
+type::vector_t
 internal_value_vector_get_visitor::operator()<double> (double) const
 {
     engine::engine::throw_exception(nullptr, "cast from float to vector is not allowed.");
-    return vector<shared_ptr<internal_value>>();
+    return type::vector_t();
 }
 
 template<>
-vector<shared_ptr<internal_value>>
-internal_value_vector_get_visitor::operator()<string> (string) const
+type::vector_t
+internal_value_vector_get_visitor::operator()<type::string_t> (type::string_t) const
 {
     engine::engine::throw_exception(nullptr, "cast from string to vector is not allowed.");
-    return vector<shared_ptr<internal_value>>();
+    return type::vector_t();
 }
 
 template<>
-vector<shared_ptr<internal_value>>
-internal_value_vector_get_visitor::operator()<vector<shared_ptr<internal_value>>> (vector<shared_ptr<internal_value>> vec) const
+type::vector_t
+internal_value_vector_get_visitor::operator()<type::vector_t> (type::vector_t vec) const
 {
     return vec;
 }
 
 template<>
-vector<shared_ptr<internal_value>>
-internal_value_vector_get_visitor::operator()<map<string,shared_ptr<internal_value>>> (map<string,shared_ptr<internal_value>>) const
+type::vector_t
+internal_value_vector_get_visitor::operator()<map<type::string_t,type::value_t>> (map<type::string_t,type::value_t>) const
 {
     engine::engine::throw_exception(nullptr, "cast from map to vector is not allowed.");
-    return vector<shared_ptr<internal_value>>();
+    return type::vector_t();
 }
 
 template<>
-vector<shared_ptr<internal_value>>
+type::vector_t
 internal_value_vector_get_visitor::operator()<shared_ptr<void>> (shared_ptr<void>) const
 {
     engine::engine::throw_exception(nullptr, "cast from resource to vector is not allowed.");
-    return vector<shared_ptr<internal_value>>();
+    return type::vector_t();
 }
 
 template<>
-map<string,shared_ptr<internal_value>>
+map<type::string_t,type::value_t>
 internal_value_map_get_visitor::operator()<bool> (bool value) const
 {
     engine::engine::throw_exception(nullptr, "cast from boolean to map is not allowed.");
-    return map<string,shared_ptr<internal_value>>();
+    return map<type::string_t,type::value_t>();
 }
 
 template<>
-map<string,shared_ptr<internal_value>>
+map<type::string_t,type::value_t>
 internal_value_map_get_visitor::operator()<char> (char value) const
 {
     engine::engine::throw_exception(nullptr, "cast from character to map is not allowed.");
-    return map<string,shared_ptr<internal_value>>();
+    return map<type::string_t,type::value_t>();
 }
 
 template<>
-map<string,shared_ptr<internal_value>>
+map<type::string_t,type::value_t>
 internal_value_map_get_visitor::operator()<long> (long value) const
 {
     engine::engine::throw_exception(nullptr, "cast from integer to map is not allowed.");
-    return map<string,shared_ptr<internal_value>>();
+    return map<type::string_t,type::value_t>();
 }
 
 template<>
-map<string,shared_ptr<internal_value>>
+map<type::string_t,type::value_t>
 internal_value_map_get_visitor::operator()<double> (double value) const
 {
     engine::engine::throw_exception(nullptr, "cast from float to map is not allowed.");
-    return map<string,shared_ptr<internal_value>>();
+    return map<type::string_t,type::value_t>();
 }
 
 template<>
-map<string,shared_ptr<internal_value>>
-internal_value_map_get_visitor::operator()<string> (string) const
+map<type::string_t,type::value_t>
+internal_value_map_get_visitor::operator()<type::string_t> (type::string_t) const
 {
     engine::engine::throw_exception(nullptr, "cast from string to map is not allowed.");
-    return map<string,shared_ptr<internal_value>>();
+    return map<type::string_t,type::value_t>();
 }
 
 template<>
-map<string,shared_ptr<internal_value>>
-internal_value_map_get_visitor::operator()<vector<shared_ptr<internal_value>>> (vector<shared_ptr<internal_value>>) const
+map<type::string_t,type::value_t>
+internal_value_map_get_visitor::operator()<type::vector_t> (type::vector_t) const
 {
     engine::engine::throw_exception(nullptr, "cast from vector to map is not allowed.");
-    return map<string,shared_ptr<internal_value>>();
+    return map<type::string_t,type::value_t>();
 }
 
 template<>
-map<string,shared_ptr<internal_value>>
-internal_value_map_get_visitor::operator()<map<string,shared_ptr<internal_value>>> (map<string,shared_ptr<internal_value>> array) const
+map<type::string_t,type::value_t>
+internal_value_map_get_visitor::operator()<map<type::string_t,type::value_t>> (map<type::string_t,type::value_t> array) const
 {
     return array;
 }
 
 template<>
-map<string,shared_ptr<internal_value>>
+map<type::string_t,type::value_t>
 internal_value_map_get_visitor::operator()<shared_ptr<void>> (shared_ptr<void>) const
 {
     engine::engine::throw_exception(nullptr, "cast from resource to map is not allowed.");
-    return map<string,shared_ptr<internal_value>>();
+    return map<type::string_t,type::value_t>();
 }
 
 template<>
@@ -595,7 +626,7 @@ internal_value_resource_get_visitor::operator()<double> (double value) const
 
 template<>
 shared_ptr<void>
-internal_value_resource_get_visitor::operator()<string> (string) const
+internal_value_resource_get_visitor::operator()<type::string_t> (type::string_t) const
 {
     engine::engine::throw_exception(nullptr, "cast from string to resource is not allowed.");
     return nullptr;
@@ -603,7 +634,7 @@ internal_value_resource_get_visitor::operator()<string> (string) const
 
 template<>
 shared_ptr<void>
-internal_value_resource_get_visitor::operator()<vector<shared_ptr<internal_value>>> (vector<shared_ptr<internal_value>>) const
+internal_value_resource_get_visitor::operator()<type::vector_t> (type::vector_t) const
 {
     engine::engine::throw_exception(nullptr, "cast from vector to resource is not allowed.");
     return nullptr;
@@ -611,7 +642,7 @@ internal_value_resource_get_visitor::operator()<vector<shared_ptr<internal_value
 
 template<>
 shared_ptr<void>
-internal_value_resource_get_visitor::operator()<map<string,shared_ptr<internal_value>>> (map<string,shared_ptr<internal_value>>) const
+internal_value_resource_get_visitor::operator()<map<type::string_t,type::value_t>> (map<type::string_t,type::value_t>) const
 {
     engine::engine::throw_exception(nullptr, "cast from resource to resource is not allowed.");
     return nullptr;

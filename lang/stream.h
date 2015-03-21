@@ -15,7 +15,7 @@ template<typename T1, typename T2>
 class scalar_worker_add: public worker
 {
 public:
-    bool operator() (shared_ptr<internal_value> self, vector<shared_ptr<internal_value>> parameters, shared_ptr<internal_value> return_value);
+    bool operator() (type::value_t self, type::vector_t parameters, type::value_t return_value);
 };
 
 class stream_bundle: public bundle
