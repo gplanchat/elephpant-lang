@@ -1,5 +1,7 @@
 # ElePHPant lang
 
+*ElePHPant* is an experimental language interpereter and virtual machine.
+It is not aimed to be used in production, it is just for fun.
 
 ## Example
 
