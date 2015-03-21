@@ -16,7 +16,7 @@ int main()
 {
     using namespace rephp::engine;
 
-    auto b_standard = std::shared_ptr<rephp::lang::standard_bundle>(new rephp::lang::standard_bundle("core"));
+    auto b_standard = bundle_t(new rephp::lang::standard_bundle("core"));
 
     rephp::reflection::bundle::dump(std::cout, b_standard);
 
@@ -27,8 +27,5 @@ int main()
     rephp::reflection::internal_value::dump(std::cout, a);
     rephp::reflection::internal_value::dump(std::cout, b);
     rephp::reflection::internal_value::dump(std::cout, c);
-
-    //std::cout << a->call('toString') << std::endl;
-    //std::cout << (a + b) << std::endl;
 }
 ```
