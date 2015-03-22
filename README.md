@@ -29,5 +29,6 @@ int main()
     rephp::reflection::internal_value::dump(std::cout, a);
     rephp::reflection::internal_value::dump(std::cout, b);
     rephp::reflection::internal_value::dump(std::cout, c);
+    rephp::reflection::internal_value::dump(std::cout, a + b);
 }
 ```
