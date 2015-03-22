@@ -165,19 +165,19 @@ standard_bundle::standard_bundle(const char *const name): standard_bundle(type::
 standard_bundle::standard_bundle(type::string_t name): bundle(name)
 {
 /*
-    auto worker_unary_operator_registration = [](type::type_t ce, engine_operator op, type::worker_t worker) {
+    auto worker_unary_operator_registration = [](type::type_t ce, type::operator_t op, type::worker_t worker) {
         type::prototype_t proto(new callable_prototype(ce));
 
         ce->add_operator(op, proto, worker);
     };
 */
-    auto worker_binary_operator_registration = [](type::type_t ce, engine_operator op, type::worker_t worker, type::type_t operand_ce) {
+    auto worker_binary_operator_registration = [](type::type_t ce, type::operator_t op, type::worker_t worker, type::type_t operand_ce) {
         type::prototype_t proto(new callable_prototype(ce));
         proto->add_parameter("operand", operand_ce);
 
         ce->add_operator(op, proto, worker);
     };
-    auto worker_ternary_operator_registration = [](type::type_t ce, engine_operator op, type::worker_t worker, type::type_t first_operand_ce, type::type_t second_operand_ce) {
+    auto worker_ternary_operator_registration = [](type::type_t ce, type::operator_t op, type::worker_t worker, type::type_t first_operand_ce, type::type_t second_operand_ce) {
         type::prototype_t proto(new callable_prototype(ce));
         proto->add_parameter("first", first_operand_ce);
         proto->add_parameter("second", second_operand_ce);

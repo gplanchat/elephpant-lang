@@ -22,14 +22,14 @@ class internal_type;
 class internal_value;
 class bundle;
 
-typedef enum access_mode {
+typedef enum {
     ACC_PUBLIC,
     ACC_PROTECTED,
     ACC_PRIVATE,
     ACC_PACKAGE
 } access_mode_t;
 
-typedef enum class_type {
+typedef enum {
     TYP_NATIVE_TYPE,
     TYP_CLASS,
     TYP_INTERFACE,
@@ -37,7 +37,7 @@ typedef enum class_type {
     TYP_ENUM
 } class_type_t;
 
-typedef enum engine_operator {
+typedef enum {
     OP_LET,
     OP_ADD,
     OP_SUB,
@@ -111,6 +111,7 @@ typedef boost::variant<
     resource_t
 > internal_variant_t;
 
+typedef std::vector<value_t>                                    call_parameters_list_t;
 typedef std::map<string_t, std::tuple<type_t, value_t>>         parameters_map_t;
 typedef std::map<string_t, type_t>                              classes_map_t;
 typedef std::map<string_t, value_t>                             consts_map_t;
@@ -146,7 +147,7 @@ inline type_t get_attribute_type(attributes_map_t::value_type current)
     return std::get<0>(current.second);
 }
 
-inline access_mode get_attribute_access_mode(type::attributes_map_t::value_type current)
+inline type::access_mode_t get_attribute_access_mode(type::attributes_map_t::value_type current)
 {
     return std::get<1>(current.second);
 }

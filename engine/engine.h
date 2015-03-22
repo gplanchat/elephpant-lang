@@ -9,6 +9,8 @@
 #include <unordered_set>
 #include <map>
 #include <vector>
+#include <initializer_list>
+#include <algorithm>
 
 #include <boost/variant.hpp>
 
@@ -37,7 +39,8 @@ using namespace std;
 class engine
 {
 private:
-    static std::map<type::operator_t,string> operators_map;
+    static std::map<type::operator_t,string>       operators_map;
+    static std::map<type::string_t,type::bundle_t> bundles_map;
 
 public:
     inline static const type::string_t &get_operator_string(type::operator_t op)
@@ -45,14 +48,33 @@ public:
         return operators_map[op];
     }
 
-    void static throw_exception(type::type_t, const char *message, long = 0, type::value_t = nullptr)
+    inline void static throw_exception(type::type_t, const char *message, long = 0, type::value_t = nullptr)
     {
         std::cerr << "An exception occured: " << message << std::endl;
     }
 
-    void static throw_exception(type::type_t, type::string_t &message, long = 0, type::value_t = nullptr)
+    inline void static throw_exception(type::type_t, type::string_t &message, long = 0, type::value_t = nullptr)
     {
         std::cerr << "An exception occured: " << message << std::endl;
+    }
+
+    inline void static register_bundle(type::bundle_t bundle);
+
+    template<typename T>
+    type::value_t static invoke(type::string class_name, T value)
+    {
+        auto found = find_if(bundles_map.begin(), bundles_map.end(), [&](auto current) {
+            if (type::get_value(current)->has_class(class_name)) {
+                return true;
+            }
+            return false;
+        });
+
+        if (found != bundles_map.end()) {
+            return type::get_value(*found)->invoke(class_name, value);
+        }
+
+        return nullptr;
     }
 };
 
@@ -74,8 +96,8 @@ public:
     callable_prototype();
     callable_prototype(type::type_t return_type);
 
+    bool match(type::call_parameters_list_t params);
     bool match(type::prototype_t prototype);
-    bool call_match(type::vector_t params);
 
     void add_parameter(type::string_t name, type::type_t parameter);
     void add_parameter(type::string_t name, type::type_t parameter, type::value_t default_value);
@@ -93,12 +115,13 @@ private:
     type::access_mode_t access;
 
 public:
-    method_entry(type::prototype_t prototype, type::worker_t cb, access_mode access);
+    method_entry(type::prototype_t prototype, type::worker_t cb, type::access_mode_t access);
 
+    bool matches_params(type::call_parameters_list_t params);
     bool matches_prototype(type::prototype_t prototype);
-    bool matches_access_mode(access_mode mode);
+    bool matches_access_mode(type::access_mode_t mode);
 
-    //bool call(type::value_t retval, map<type::string_t,type::value_t> parameters, type::value_t context);
+    type::value_t call(type::call_parameters_list_t parameters, type::value_t context);
 };
 
 class internal_type: public enable_shared_from_this<internal_type>
@@ -122,24 +145,26 @@ public:
 
     void add_interface(type::type_t interface);
     void add_trait(type::type_t trait);
-    void add_attribute(type::string_t name, type::type_t type, access_mode access = ACC_PRIVATE);
-    void add_method(type::string_t name, type::prototype_t prototype, type::worker_t cb, access_mode access = ACC_PRIVATE);
-    void add_operator(engine_operator op, type::prototype_t prototype, type::worker_t cb, access_mode access = ACC_PUBLIC);
+    void add_attribute(type::string_t name, type::type_t type, type::access_mode_t access = ACC_PRIVATE);
+    void add_method(type::string_t name, type::prototype_t prototype, type::worker_t cb, type::access_mode_t access = ACC_PRIVATE);
+    void add_operator(type::operator_t op, type::prototype_t prototype, type::worker_t cb, type::access_mode_t access = ACC_PUBLIC);
 
     bool has_parent(type::string_t parent);
     bool has_parent(type::type_t parent);
     bool has_interface(type::string_t interface);
     bool has_interface(type::type_t interface);
+    bool has_interface_recursive(type::string_t interface);
+    bool has_interface_recursive(type::type_t interface);
     bool has_trait(type::string_t trait);
     bool has_trait(type::type_t trait);
     bool has_trait_recursive(type::string_t trait);
     bool has_trait_recursive(type::type_t trait);
-    bool has_method(type::string_t name, type::prototype_t prototype, type::value_t context);
-    bool has_operator(engine_operator op, type::prototype_t prototype, type::value_t context);
+    bool has_method(type::string_t name, type::call_parameters_list_t params, type::value_t context);
+    bool has_operator(type::operator_t op, type::call_parameters_list_t params, type::value_t context);
     bool has_attribute(type::string_t name, type::value_t context);
 
-    type::method_t find_method(type::string_t name, type::prototype_t prototype, type::value_t context);
-    type::method_t find_operator(engine_operator op, type::prototype_t prototype, type::value_t context);
+    type::method_t find_method(type::string_t name, type::call_parameters_list_t params, type::value_t context);
+    type::method_t find_operator(type::operator_t op, type::call_parameters_list_t params, type::value_t context);
 
     type::string_t get_name();
     type::type_t get_parent();
@@ -173,8 +198,18 @@ public:
     {
         return boost::get<T>(this->raw_value);
     }
+
+    inline type::value_t call(type::operator_t op, std::initializer_list<type::value_t> parameters)
+    {
+        type::value_t retval;
+
+        auto this_ptr = shared_from_this();
+        auto method = this->get_type()->find_operator(op, parameters, this_ptr);
+
+        return method->call(parameters, this_ptr);
+    }
 /*
-    inline type::value_t call(type::string_t method_name, type::type_t return_type, map<type::string_t,type::value_t> parameters)
+    inline type::value_t call(type::string_t method_name, std::initializer_list<type::value_t> parameters)
     {
         type::value_t retval;
         type::prototype_t proto(new callable_prototype())
@@ -190,7 +225,7 @@ public:
 
         //method->call();
     }
-    */
+*/
 };
 
 template<>
@@ -344,8 +379,6 @@ private:
 protected:
     void register_class(type::type_t ce);
 
-    type::type_t get_class(type::string_t name);
-
 public:
     bundle(const char *const name);
     bundle(type::string_t name);
@@ -353,6 +386,21 @@ public:
     void merge(type::string_t ns, type::bundle_t sub_bundle);
 
     type::string_t get_name();
+
+    inline bool has_class(const char *name)
+    {
+        type::string_t n(name);
+        return this->has_class(n);
+    }
+
+    inline type::type_t get_class(const char *name)
+    {
+        type::string_t n(name);
+        return this->get_class(n);
+    }
+
+    bool has_class(type::string_t &name);
+    type::type_t get_class(type::string_t &name);
 
     template<typename T>
     inline type::value_t invoke(const char *name, T value)
@@ -366,11 +414,22 @@ public:
     {
         auto type = this->get_class(name);
 
+        if (type == nullptr) {
+            return nullptr;
+        }
+
         type::value_t item(new internal_value(type));
         item->set<T>(value);
+
         return item;
     }
 };
+
+inline void
+engine::register_bundle(type::bundle_t bundle)
+{
+    bundles_map.insert(std::make_pair(bundle->get_name(), bundle));
+}
 
 };
 

@@ -37,17 +37,26 @@ callable_prototype::match(type::prototype_t prototype)
 }
 
 bool
-callable_prototype::call_match(type::vector_t params)
+callable_prototype::match(type::call_parameters_list_t params)
 {
     bool passed_mandatory = false;
     auto it = this->parameters.begin();
     auto cur = params.begin();
     for (;it != this->parameters.end() && cur != params.end(); ++it, ++cur) {
-        if (type::get_parameter_type(*it) != nullptr) {
+        auto cur_type = type::get_parameter_type(*it);
+
+        if (cur_type != nullptr) {
             passed_mandatory = true;
         }
-        auto cur_type = (*cur)->get_type();
-        if (cur_type != type::get_parameter_value(*it)->get_type() && !cur_type->has_parent(type::get_key(*it)) && !cur_type->has_interface(type::get_key(*it))) {
+
+        auto cur_value = type::get_parameter_value(*it);
+        if (cur_value != nullptr && cur_type != cur_value->get_type()) {
+            return false;
+        }
+        if (!cur_type->has_parent(type::get_key(*it))) {
+            return false;
+        }
+        if (!cur_type->has_interface(type::get_key(*it))) {
             return false;
         }
     }
@@ -73,9 +82,15 @@ callable_prototype::count()
     return this->parameters.size();
 }
 
-method_entry::method_entry(type::prototype_t prototype, type::worker_t cb, access_mode access):
+method_entry::method_entry(type::prototype_t prototype, type::worker_t cb, type::access_mode_t access):
     prototype(prototype), worker(cb), access(access)
 {}
+
+bool
+method_entry::matches_params(type::call_parameters_list_t params)
+{
+    return this->prototype->match(params);
+}
 
 bool
 method_entry::matches_prototype(type::prototype_t prototype)
@@ -84,12 +99,18 @@ method_entry::matches_prototype(type::prototype_t prototype)
 }
 
 bool
-method_entry::matches_access_mode(access_mode mode)
+method_entry::matches_access_mode(type::access_mode_t mode)
 {
     return this->access == mode;
 }
 
-internal_type::internal_type(type::string_t name, class_type type, type::type_t parent):
+type::value_t
+method_entry::call(type::call_parameters_list_t, type::value_t)
+{
+    return engine::invoke("String", type::string_t("Hello World!"));
+}
+
+internal_type::internal_type(type::string_t name, type::class_type_t type, type::type_t parent):
     parent(parent),
     name(name),
     type(type)
@@ -108,20 +129,20 @@ internal_type::add_trait(type::type_t trait)
 }
 
 void
-internal_type::add_attribute(type::string_t name, type::type_t type, access_mode access)
+internal_type::add_attribute(type::string_t name, type::type_t type, type::access_mode_t access)
 {
     this->attributes[name] = type::attributes_map_t::mapped_type(type, access);
 }
 
 void
-internal_type::add_method(type::string_t name, type::prototype_t prototype, type::worker_t cb, access_mode access)
+internal_type::add_method(type::string_t name, type::prototype_t prototype, type::worker_t cb, type::access_mode_t access)
 {
     type::method_t me(new method_entry(prototype, cb, access));
     this->methods.insert(make_pair(name, me));
 }
 
 void
-internal_type::add_operator(engine_operator op, type::prototype_t prototype, type::worker_t cb, access_mode access)
+internal_type::add_operator(type::operator_t op, type::prototype_t prototype, type::worker_t cb, type::access_mode_t access)
 {
     type::method_t oe(new method_entry(prototype, cb, access));
     this->operators.insert(make_pair(op, oe));
@@ -162,9 +183,6 @@ internal_type::has_interface(type::string_t interface)
         if (type::get_key(*it) == interface) {
             return true;
         }
-        if (type::get_value(*it)->has_interface(interface)) {
-            return true;
-        }
     }
 
     return false;
@@ -177,7 +195,34 @@ internal_type::has_interface(type::type_t interface)
         if (type::get_value(*it) == interface) {
             return true;
         }
-        if (type::get_value(*it)->has_interface(interface)) {
+    }
+
+    return false;
+}
+
+bool
+internal_type::has_interface_recursive(type::string_t interface)
+{
+    for (auto it = this->interfaces.begin(); it != this->interfaces.end(); ++it) {
+        if (type::get_key(*it) == interface) {
+            return true;
+        }
+        if (type::get_value(*it)->has_interface_recursive(interface)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool
+internal_type::has_interface_recursive(type::type_t interface)
+{
+    for (auto it = this->interfaces.begin(); it != this->interfaces.end(); ++it) {
+        if (type::get_value(*it) == interface) {
+            return true;
+        }
+        if (type::get_value(*it)->has_interface_recursive(interface)) {
             return true;
         }
     }
@@ -244,7 +289,7 @@ internal_type::has_trait_recursive(type::type_t trait)
 }
 
 type::method_t
-internal_type::find_method(type::string_t name, type::prototype_t prototype, type::value_t context)
+internal_type::find_method(type::string_t name, type::call_parameters_list_t params, type::value_t context)
 {
     auto range = this->methods.equal_range(name);
     if (range.first == range.second) {
@@ -255,7 +300,7 @@ internal_type::find_method(type::string_t name, type::prototype_t prototype, typ
     auto this_shared = shared_from_this();
 
     auto found = find_if(range.first, range.second, [&](type::methods_map_t::value_type &method) {
-        if (!type::get_value(method)->matches_prototype(prototype)) {
+        if (!type::get_value(method)->matches_params(params)) {
             return false;
         }
 
@@ -298,13 +343,13 @@ internal_type::find_method(type::string_t name, type::prototype_t prototype, typ
 }
 
 bool
-internal_type::has_method(type::string_t name, type::prototype_t prototype, type::value_t context)
+internal_type::has_method(type::string_t name, type::call_parameters_list_t params, type::value_t context)
 {
-    return this->find_method(name, prototype, context) != nullptr;
+    return this->find_method(name, params, context) != nullptr;
 }
 
 type::method_t
-internal_type::find_operator(engine_operator op, type::prototype_t prototype, type::value_t context)
+internal_type::find_operator(type::operator_t op, type::call_parameters_list_t params, type::value_t context)
 {
     auto range = this->operators.equal_range(op);
     if (range.first == range.second) {
@@ -315,7 +360,7 @@ internal_type::find_operator(engine_operator op, type::prototype_t prototype, ty
     auto this_shared = shared_from_this();
 
     auto found = find_if(range.first, range.second, [&](type::operators_map_t::value_type &op) {
-        if (!type::get_value(op)->matches_prototype(prototype)) {
+        if (!type::get_value(op)->matches_params(params)) {
             return false;
         }
 
@@ -358,9 +403,9 @@ internal_type::find_operator(engine_operator op, type::prototype_t prototype, ty
 }
 
 bool
-internal_type::has_operator(engine_operator op, type::prototype_t prototype, type::value_t context)
+internal_type::has_operator(type::operator_t op, type::call_parameters_list_t params, type::value_t context)
 {
-    return this->find_operator(op, prototype, context) != nullptr;
+    return this->find_operator(op, params, context) != nullptr;
 }
 
 bool
@@ -440,8 +485,14 @@ bundle::register_class(type::type_t ce)
     this->classes[ce->get_name()] = ce;
 }
 
+bool
+bundle::has_class(type::string_t &name)
+{
+    return this->classes[name] != nullptr;
+}
+
 type::type_t
-bundle::get_class(type::string_t name)
+bundle::get_class(type::string_t &name)
 {
     return this->classes[name];
 }
@@ -498,6 +549,7 @@ bundle::invoke<float>(type::string_t &name, float value)
 }
 
 std::map<type::operator_t,string> engine::operators_map = {
+    ADD_OPERATOR(OP_LET),
     ADD_OPERATOR(OP_ADD),
     ADD_OPERATOR(OP_SUB),
     ADD_OPERATOR(OP_MUL),
@@ -519,8 +571,17 @@ std::map<type::operator_t,string> engine::operators_map = {
     ADD_OPERATOR(OP_OFFSET_GET),
     ADD_OPERATOR(OP_OFFSET_UNSET),
     ADD_OPERATOR(OP_OFFSET_EXISTS),
-    ADD_OPERATOR(OP_DOT)
+    ADD_OPERATOR(OP_DOT),
+    ADD_OPERATOR(OP_EQ),
+    ADD_OPERATOR(OP_NEQ),
+    ADD_OPERATOR(OP_LT),
+    ADD_OPERATOR(OP_LTEQ),
+    ADD_OPERATOR(OP_GT),
+    ADD_OPERATOR(OP_GTEQ),
+    ADD_OPERATOR(OP_SPACESHIP)
 };
+
+std::map<type::string_t,type::bundle_t> engine::bundles_map;
 
 };
 

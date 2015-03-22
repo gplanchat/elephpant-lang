@@ -31,8 +31,6 @@ namespace reflection {
 using namespace std;
 using namespace rephp::engine::type;
 
-using rephp::engine::access_mode;
-
 class callable_prototype
 {
 public:
