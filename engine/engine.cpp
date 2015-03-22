@@ -3,17 +3,13 @@
 #include <algorithm>
 
 #include "engine.h"
+#include "reflection.h"
 
 namespace rephp {
 
 namespace engine {
 
 using namespace std;
-
-bool worker::operator() (type::value_t, type::vector_t, type::value_t)
-{
-    return false;
-}
 
 callable_prototype::callable_prototype()
 {}
@@ -43,25 +39,23 @@ callable_prototype::match(type::call_parameters_list_t params)
     auto it = this->parameters.begin();
     auto cur = params.begin();
     for (;it != this->parameters.end() && cur != params.end(); ++it, ++cur) {
-        auto cur_type = type::get_parameter_type(*it);
+        auto cur_type = (*cur)->get_type();
+        auto value = type::get_parameter_value(*it);
+        auto type = type::get_parameter_type(*it);
 
-        if (cur_type != nullptr) {
+        if (value != nullptr) {
             passed_mandatory = true;
-        }
 
-        auto cur_value = type::get_parameter_value(*it);
-        if (cur_value != nullptr && cur_type != cur_value->get_type()) {
-            return false;
+            if (cur_type != value->get_type()) {
+                return false;
+            }
         }
-        if (!cur_type->has_parent(type::get_key(*it))) {
-            return false;
-        }
-        if (!cur_type->has_interface(type::get_key(*it))) {
+        if (cur_type != type && !cur_type->has_parent(type) && !cur_type->has_interface(type)) {
             return false;
         }
     }
 
-    return passed_mandatory;
+    return !passed_mandatory;
 }
 
 void
@@ -105,9 +99,13 @@ method_entry::matches_access_mode(type::access_mode_t mode)
 }
 
 type::value_t
-method_entry::call(type::call_parameters_list_t, type::value_t)
+method_entry::call(type::call_parameters_list_t parameters, type::value_t context)
 {
-    return engine::invoke("String", type::string_t("Hello World!"));
+    if (this->worker == nullptr) {
+        return engine::invoke("Null", 0);
+    }
+
+    return (*this->worker)(parameters, context);
 }
 
 internal_type::internal_type(type::string_t name, type::class_type_t type, type::type_t parent):

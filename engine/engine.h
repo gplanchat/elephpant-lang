@@ -81,7 +81,7 @@ public:
 class worker
 {
 public:
-    bool operator() (type::value_t self, type::vector_t parameters, type::value_t return_value);
+    virtual type::value_t operator() (type::call_parameters_list_t parameters, type::value_t self) = 0;
 };
 
 class callable_prototype: public enable_shared_from_this<callable_prototype>
@@ -206,7 +206,21 @@ public:
         auto this_ptr = shared_from_this();
         auto method = this->get_type()->find_operator(op, parameters, this_ptr);
 
+        if (method == nullptr) {
+            engine::throw_exception(nullptr, "Operator not found.");
+            return engine::invoke("Null", 0);
+        }
+
         return method->call(parameters, this_ptr);
+    }
+
+    inline type::value_t copy()
+    {
+        type::value_t copied_value(new internal_value(this->get_type()));
+
+        copied_value->raw_value = this->raw_value;
+
+        return copied_value;
     }
 /*
     inline type::value_t call(type::string_t method_name, std::initializer_list<type::value_t> parameters)
@@ -429,6 +443,36 @@ inline void
 engine::register_bundle(type::bundle_t bundle)
 {
     bundles_map.insert(std::make_pair(bundle->get_name(), bundle));
+}
+
+inline type::value_t
+operator+ (type::value_t left, type::value_t right)
+{
+    return left->call(type::OP_ADD, {right});
+}
+
+inline type::value_t
+operator- (type::value_t left, type::value_t right)
+{
+    return left->call(type::OP_SUB, {right});
+}
+
+inline type::value_t
+operator* (type::value_t left, type::value_t right)
+{
+    return left->call(type::OP_MUL, {right});
+}
+
+inline type::value_t
+operator/ (type::value_t left, type::value_t right)
+{
+    return left->call(type::OP_DIV, {right});
+}
+
+inline type::value_t
+operator% (type::value_t left, type::value_t right)
+{
+    return left->call(type::OP_MOD, {right});
 }
 
 };
