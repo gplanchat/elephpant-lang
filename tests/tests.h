@@ -412,8 +412,8 @@ private:
     std::list<std::function<void()>> test_cases;
 
 public:
-    void operator() (std::function<void()> &test_case);
-    void operator() ();
+    test_suite &operator() (std::function<void()> &test_case);
+    test_suite &operator() ();
 };
 
 /*
