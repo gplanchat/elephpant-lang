@@ -412,7 +412,7 @@ private:
     std::list<std::function<void()>> test_cases;
 
 public:
-    test_suite &operator() (std::function<void()> &test_case);
+    test_suite &operator<< (std::function<void()> &test_case);
     test_suite &operator() ();
 };
 
