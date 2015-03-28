@@ -20,103 +20,98 @@ public:
     value_bag(Type value): value(value) {}
 };
 
-template<typename Type>
-inline bool operator== (value_bag<Type> &lhs, value_bag<Type> &rhs);
-
-template<typename Type>
-inline bool operator== (const value_bag<Type> &lhs, const value_bag<Type> &rhs);
-
 namespace asserter {
 
 template<typename Expected, typename Actual>
 class base_asserter
 {
 public:
-    virtual bool operator() (Expected &expected, Actual &actual) = 0;
+    virtual ~base_asserter() {}
+    virtual bool operator() (value_bag<Expected> &expected, value_bag<Actual> &actual) = 0;
 };
 
 template<typename Expected, typename Actual>
 class equals: public base_asserter<Expected, Actual>
 {
 public:
-    bool operator() (Expected &expected, Actual &actual);
+    bool operator() (value_bag<Expected> &expected, value_bag<Actual> &actual);
 };
 
 template<typename Expected, typename Actual>
 class not_equals: public base_asserter<Expected, Actual>
 {
 public:
-    bool operator() (Expected &expected, Actual &actual);
+    bool operator() (value_bag<Expected> &expected, value_bag<Actual> &actual);
 };
 
 template<typename Expected, typename Actual>
 class greater_than: public base_asserter<Expected, Actual>
 {
 public:
-    bool operator() (Expected &expected, Actual &actual);
+    bool operator() (value_bag<Expected> &expected, value_bag<Actual> &actual);
 };
 
 template<typename Expected, typename Actual>
 class lower_than: public base_asserter<Expected, Actual>
 {
 public:
-    bool operator() (Expected &expected, Actual &actual);
+    bool operator() (value_bag<Expected> &expected, value_bag<Actual> &actual);
 };
 
 template<typename Expected, typename Actual>
 class greater_equal: public base_asserter<Expected, Actual>
 {
 public:
-    bool operator() (Expected &expected, Actual &actual);
+    bool operator() (value_bag<Expected> &expected, value_bag<Actual> &actual);
 };
 
 template<typename Expected, typename Actual>
 class lower_equal: public base_asserter<Expected, Actual>
 {
 public:
-    bool operator() (Expected &expected, Actual &actual);
+    bool operator() (value_bag<Expected> &expected, value_bag<Actual> &actual);
 };
 
 template<typename Expected, typename Actual>
 bool
-equals<Expected, Actual>::operator() (Expected &expected, Actual &actual)
+equals<Expected, Actual>::operator() (value_bag<Expected> &expected, value_bag<Actual> &actual)
 {
-    return expected == actual;
+    return expected.value == actual.value;
 }
 
 template<typename Expected, typename Actual>
 bool
-not_equals<Expected, Actual>::operator() (Expected &expected, Actual &actual)
+not_equals<Expected, Actual>::operator() (value_bag<Expected> &expected, value_bag<Actual> &actual)
 {
-    return expected == actual;
+    return expected.value != actual.value;
 }
 
 template<typename Expected, typename Actual>
 bool
-greater_than<Expected, Actual>::operator() (Expected &expected, Actual &actual)
+greater_than<Expected, Actual>::operator() (value_bag<Expected> &expected, value_bag<Actual> &actual)
 {
-    return expected > actual;
+    return expected.value > actual.value;
 }
 
 template<typename Expected, typename Actual>
 bool
-lower_than<Expected, Actual>::operator() (Expected &expected, Actual &actual)
+lower_than<Expected, Actual>::operator() (value_bag<Expected> &expected, value_bag<Actual> &actual)
 {
-    return expected < actual;
+    return expected.value < actual.value;
 }
 
 template<typename Expected, typename Actual>
 bool
-greater_equal<Expected, Actual>::operator() (Expected &expected, Actual &actual)
+greater_equal<Expected, Actual>::operator() (value_bag<Expected> &expected, value_bag<Actual> &actual)
 {
-    return expected >= actual;
+    return expected.value >= actual.value;
 }
 
 template<typename Expected, typename Actual>
 bool
-lower_equal<Expected, Actual>::operator() (Expected &expected, Actual &actual)
+lower_equal<Expected, Actual>::operator() (value_bag<Expected> &expected, value_bag<Actual> &actual)
 {
-    return expected <= actual;
+    return expected.value <= actual.value;
 }
 
 }; //namespace asserter
@@ -167,7 +162,7 @@ public:
 
         auto actual = value_bag<Expected>(result);
 
-        if ((*asserter)(expected, actual)) {
+        if (asserter(expected, actual)) {
             success(message);
             return true;
         }
@@ -204,7 +199,7 @@ public:
 
     bool operator() (std::string &ios, std::string message)
     {
-        return assertion(*asserter, ios, (value_bag<bool>(true), message));
+        return assertion(*asserter, ios, value_bag<bool>(true), message);
     }
 };
 
@@ -228,7 +223,7 @@ public:
 
     bool operator() (std::string &ios, std::string message)
     {
-        return assertion(*asserter, ios, (value_bag<bool>(false), message));
+        return assertion(*asserter, ios, value_bag<bool>(false), message);
     }
 };
 
@@ -252,7 +247,7 @@ public:
 
     bool operator() (std::string &ios, std::string message, Expected expected)
     {
-        return assertion(*asserter, ios, (value_bag<Expected>(expected), message));
+        return assertion(*asserter, ios, value_bag<Expected>(expected), message);
     }
 };
 
@@ -276,7 +271,7 @@ public:
 
     bool operator() (std::string &ios, std::string message, Expected expected)
     {
-        return assertion(*asserter, ios, (value_bag<Expected>(expected), message));
+        return assertion(*asserter, ios, value_bag<Expected>(expected), message);
     }
 };
 
@@ -300,7 +295,7 @@ public:
 
     bool operator() (std::string &ios, std::string message, Expected expected)
     {
-        return assertion(*asserter, ios, (value_bag<Expected>(expected), message));
+        return assertion(*asserter, ios, value_bag<Expected>(expected), message);
     }
 };
 
@@ -324,7 +319,7 @@ public:
 
     bool operator() (std::string &ios, std::string message, Expected expected)
     {
-        return assertion(*asserter, ios, (value_bag<Expected>(expected), message));
+        return assertion(*asserter, ios, value_bag<Expected>(expected), message);
     }
 };
 
@@ -348,7 +343,7 @@ public:
 
     bool operator() (std::string &ios, std::string message, Expected expected)
     {
-        return assertion(*asserter, ios, (value_bag<Expected>(expected), message));
+        return assertion(*asserter, ios, value_bag<Expected>(expected), message);
     }
 };
 
@@ -372,7 +367,7 @@ public:
 
     bool operator() (std::string &ios, std::string message, Expected expected)
     {
-        return assertion(*asserter, ios, (value_bag<Expected>(expected), message));
+        return assertion(*asserter, ios, value_bag<Expected>(expected), message);
     }
 };
 
@@ -380,30 +375,35 @@ template<typename Grammar, typename Space>
 void
 assertion<Grammar,Space>::success(std::string &message)
 {
+    std::cerr << "\e[1;30;41m" << "[ OK ] " << message << "\e[0m" << std::endl;
 }
 
 template<typename Grammar, typename Space>
 void
 assertion<Grammar,Space>::error(std::string &message)
 {
+    std::cerr << "\e[5;31;47m" << "[ ERROR ] " << message << "\e[0m" << std::endl;
 }
 
 template<typename Grammar, typename Space>
 void
 assertion<Grammar,Space>::failure(std::string &message)
 {
+    std::cerr << "\e[5;31;47m" << "[ FAILURE ] " << message << "\e[0m" << std::endl;
 }
 
 template<typename Grammar, typename Space>
 void
 assertion<Grammar,Space>::ignore(std::string &message)
 {
+    std::cerr << "\e[5;31;47m" << "[ IGNORE ] " << message << "\e[0m" << std::endl;
 }
 
 template<typename Grammar, typename Space>
 void
 assertion<Grammar,Space>::exception(std::string &message)
 {
+    std::cerr << "\e[5;31;47m" << "[ EXCEPTION ] " << message << "\e[0m" << std::endl;
 }
 
 class test_suite
