@@ -142,10 +142,10 @@ public:
             if (!phrase_parse(ios.begin(), ios.end(), grammar, space, result)) {
                 if (message.size() > 0) {
                     str = "Parsing failed: " + message;
-                    error(str);
+                    failure(str);
                 } else {
                     str = "Parsing failed.";
-                    error(str);
+                    failure(str);
                 }
                 return false;
             }
