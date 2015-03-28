@@ -122,24 +122,24 @@ class assertion
     Grammar grammar;
     Space   space;
 
-    void success(std::string &message);
-    void error(std::string &message);
-    void failure(std::string &message);
-    void ignore(std::string &message);
-    void exception(std::string &message);
+    void success(std::string message);
+    void error(std::string message);
+    void failure(std::string message);
+    void ignore(std::string message);
+    void exception(std::string message);
 
 public:
     assertion(Grammar &grammar, const Space &space): grammar(grammar), space(space)
     {}
 
-    template<typename Expected>
-    bool operator() (asserter::base_asserter<Expected, Expected> &asserter, std::string &ios, value_bag<Expected> expected, std::string &message)
+    template<typename Iterator, typename Expected>
+    bool operator() (asserter::base_asserter<Expected, Expected> &asserter, Iterator &begin, Iterator &end, value_bag<Expected> expected, std::string message)
     {
         Expected result;
         std::string str;
 
         try {
-            if (!phrase_parse(ios.begin(), ios.end(), grammar, space, result)) {
+            if (!phrase_parse(begin, end, grammar, space, result)) {
                 if (message.size() > 0) {
                     str = "Parsing failed: " + message;
                     failure(str);
@@ -177,6 +177,14 @@ public:
 
         return false;
     }
+
+    template<typename Expected>
+    bool operator() (asserter::base_asserter<Expected, Expected> &asserter, std::string input, value_bag<Expected> expected, std::string message)
+    {
+        auto it = input.begin();
+        auto end = input.end();
+        return (*this)(asserter, it, end, expected, message);
+    }
 };
 
 template<typename Grammar, typename Space>
@@ -197,9 +205,9 @@ public:
         delete asserter;
     }
 
-    bool operator() (std::string &ios, std::string message)
+    bool operator() (std::string input, std::string message)
     {
-        return assertion(*asserter, ios, value_bag<bool>(true), message);
+        return assertion(*asserter, input, value_bag<bool>(true), message);
     }
 };
 
@@ -221,9 +229,9 @@ public:
         delete asserter;
     }
 
-    bool operator() (std::string &ios, std::string message)
+    bool operator() (std::string input, std::string message)
     {
-        return assertion(*asserter, ios, value_bag<bool>(false), message);
+        return assertion(*asserter, input, value_bag<bool>(false), message);
     }
 };
 
@@ -245,9 +253,9 @@ public:
         delete asserter;
     }
 
-    bool operator() (std::string &ios, std::string message, Expected expected)
+    bool operator() (std::string input, std::string message, Expected expected)
     {
-        return assertion(*asserter, ios, value_bag<Expected>(expected), message);
+        return assertion(*asserter, input, value_bag<Expected>(expected), message);
     }
 };
 
@@ -269,9 +277,9 @@ public:
         delete asserter;
     }
 
-    bool operator() (std::string &ios, std::string message, Expected expected)
+    bool operator() (std::string input, std::string message, Expected expected)
     {
-        return assertion(*asserter, ios, value_bag<Expected>(expected), message);
+        return assertion(*asserter, input, value_bag<Expected>(expected), message);
     }
 };
 
@@ -293,9 +301,9 @@ public:
         delete asserter;
     }
 
-    bool operator() (std::string &ios, std::string message, Expected expected)
+    bool operator() (std::string input, std::string message, Expected expected)
     {
-        return assertion(*asserter, ios, value_bag<Expected>(expected), message);
+        return assertion(*asserter, input, value_bag<Expected>(expected), message);
     }
 };
 
@@ -317,9 +325,9 @@ public:
         delete asserter;
     }
 
-    bool operator() (std::string &ios, std::string message, Expected expected)
+    bool operator() (std::string input, std::string message, Expected expected)
     {
-        return assertion(*asserter, ios, value_bag<Expected>(expected), message);
+        return assertion(*asserter, input, value_bag<Expected>(expected), message);
     }
 };
 
@@ -341,9 +349,9 @@ public:
         delete asserter;
     }
 
-    bool operator() (std::string &ios, std::string message, Expected expected)
+    bool operator() (std::string input, std::string message, Expected expected)
     {
-        return assertion(*asserter, ios, value_bag<Expected>(expected), message);
+        return assertion(*asserter, input, value_bag<Expected>(expected), message);
     }
 };
 
@@ -365,45 +373,50 @@ public:
         delete asserter;
     }
 
-    bool operator() (std::string &ios, std::string message, Expected expected)
+    bool operator() (std::string input, std::string message, Expected expected)
     {
-        return assertion(*asserter, ios, value_bag<Expected>(expected), message);
+        return assertion(*asserter, input, value_bag<Expected>(expected), message);
     }
 };
 
 template<typename Grammar, typename Space>
 void
-assertion<Grammar,Space>::success(std::string &message)
+assertion<Grammar,Space>::success(std::string message)
 {
-    std::cerr << "\e[1;30;41m" << "[ OK ] " << message << "\e[0m" << std::endl;
+    // fg.white(37); bg.green(42);
+    std::cerr << "[ \e[5;37;42mOK\e[0m ] - \e[1;32m" << message << "\e[0m" << std::endl;
 }
 
 template<typename Grammar, typename Space>
 void
-assertion<Grammar,Space>::error(std::string &message)
+assertion<Grammar,Space>::error(std::string message)
 {
-    std::cerr << "\e[5;31;47m" << "[ ERROR ] " << message << "\e[0m" << std::endl;
+    // fg.white(31); bg.red(47);
+    std::cerr << "[ \e[5;31;47mERROR\e[0m ] - \e[1;37m" << message << "\e[0m" << std::endl;
 }
 
 template<typename Grammar, typename Space>
 void
-assertion<Grammar,Space>::failure(std::string &message)
+assertion<Grammar,Space>::failure(std::string message)
 {
-    std::cerr << "\e[5;31;47m" << "[ FAILURE ] " << message << "\e[0m" << std::endl;
+    // fg.white(37); bg.red(41);
+    std::cerr << "[ \e[5;37;41mFAILURE\e[0m ] - \e[1;31m" << message << "\e[0m" << std::endl;
 }
 
 template<typename Grammar, typename Space>
 void
-assertion<Grammar,Space>::ignore(std::string &message)
+assertion<Grammar,Space>::ignore(std::string message)
 {
-    std::cerr << "\e[5;31;47m" << "[ IGNORE ] " << message << "\e[0m" << std::endl;
+    // fg.black(30); bg.cyan(46);
+    std::cerr << "[ \e[5;30;46mIGNORE\e[0m ] - \e[1;36m" << message << "\e[0m" << std::endl;
 }
 
 template<typename Grammar, typename Space>
 void
-assertion<Grammar,Space>::exception(std::string &message)
+assertion<Grammar,Space>::exception(std::string message)
 {
-    std::cerr << "\e[5;31;47m" << "[ EXCEPTION ] " << message << "\e[0m" << std::endl;
+    // fg.magenta(35); bg.black(40);
+    std::cerr << "[ \e[5;35;40mEXCEPTIO\e0m ] - \e[1;30m" << message << "\e[0m" << std::endl;
 }
 
 class test_suite
