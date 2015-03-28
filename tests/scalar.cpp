@@ -14,7 +14,7 @@ namespace parser {
 using boost::spirit::ascii::space;
 using boost::spirit::ascii::space_type;
 
-boolean::boolean()
+boolean::boolean(): suite()
 {
     suite << (std::function<void()>([]() {
         grammar_t parser;
@@ -31,7 +31,7 @@ boolean::boolean()
     }));
 }
 
-integer::integer()
+integer::integer(): suite()
 {
     suite << (std::function<void()>([]() {
         grammar_t parser;
@@ -48,7 +48,7 @@ integer::integer()
     }));
 }
 
-real::real()
+real::real(): suite()
 {
     suite << (std::function<void()>([]() {
         grammar_t parser;
