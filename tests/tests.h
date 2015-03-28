@@ -36,42 +36,42 @@ public:
 };
 
 template<typename Expected, typename Actual>
-class equals: base_asserter<Expected, Actual>
+class equals: public base_asserter<Expected, Actual>
 {
 public:
     bool operator() (Expected &expected, Actual &actual);
 };
 
 template<typename Expected, typename Actual>
-class not_equals: base_asserter<Expected, Actual>
+class not_equals: public base_asserter<Expected, Actual>
 {
 public:
     bool operator() (Expected &expected, Actual &actual);
 };
 
 template<typename Expected, typename Actual>
-class greater_than: base_asserter<Expected, Actual>
+class greater_than: public base_asserter<Expected, Actual>
 {
 public:
     bool operator() (Expected &expected, Actual &actual);
 };
 
 template<typename Expected, typename Actual>
-class lower_than: base_asserter<Expected, Actual>
+class lower_than: public base_asserter<Expected, Actual>
 {
 public:
     bool operator() (Expected &expected, Actual &actual);
 };
 
 template<typename Expected, typename Actual>
-class greater_equal: base_asserter<Expected, Actual>
+class greater_equal: public base_asserter<Expected, Actual>
 {
 public:
     bool operator() (Expected &expected, Actual &actual);
 };
 
 template<typename Expected, typename Actual>
-class lower_equal: base_asserter<Expected, Actual>
+class lower_equal: public base_asserter<Expected, Actual>
 {
 public:
     bool operator() (Expected &expected, Actual &actual);
@@ -134,7 +134,7 @@ class assertion
     void exception(std::string &message);
 
 public:
-    assertion(Grammar &grammar, Space &space): grammar(grammar), space(space)
+    assertion(Grammar &grammar, const Space &space): grammar(grammar), space(space)
     {}
 
     template<typename Expected>
@@ -192,7 +192,7 @@ private:
     asserter::base_asserter<bool, bool> *asserter;
 
 public:
-    assert_true(Grammar &grammar, Space &space): assertion(grammar, space)
+    assert_true(Grammar &grammar, const Space &space): assertion(grammar, space)
     {
         asserter = new asserter::equals<bool, bool>();
     }
@@ -216,7 +216,7 @@ private:
     asserter::base_asserter<bool, bool> *asserter;
 
 public:
-    assert_false(Grammar &grammar, Space &space): assertion(grammar, space)
+    assert_false(Grammar &grammar, const Space &space): assertion(grammar, space)
     {
         asserter = new asserter::equals<bool, bool>();
     }
@@ -240,7 +240,7 @@ private:
     asserter::base_asserter<Expected, Expected> *asserter;
 
 public:
-    assert_equals(Grammar &grammar, Space &space): assertion(grammar, space)
+    assert_equals(Grammar &grammar, const Space &space): assertion(grammar, space)
     {
         asserter = new asserter::equals<Expected, Expected>();
     }
@@ -264,7 +264,7 @@ private:
     asserter::base_asserter<Expected, Expected> *asserter;
 
 public:
-    assert_not_equals(Grammar &grammar, Space &space): assertion(grammar, space)
+    assert_not_equals(Grammar &grammar, const Space &space): assertion(grammar, space)
     {
         asserter = new asserter::not_equals<Expected, Expected>();
     }
@@ -288,7 +288,7 @@ private:
     asserter::base_asserter<Expected, Expected> *asserter;
 
 public:
-    assert_greater_than(Grammar &grammar, Space &space): assertion(grammar, space)
+    assert_greater_than(Grammar &grammar, const Space &space): assertion(grammar, space)
     {
         asserter = new asserter::greater_than<Expected, Expected>();
     }
@@ -312,7 +312,7 @@ private:
     asserter::base_asserter<Expected, Expected> *asserter;
 
 public:
-    assert_lower_than(Grammar &grammar, Space &space): assertion(grammar, space)
+    assert_lower_than(Grammar &grammar, const Space &space): assertion(grammar, space)
     {
         asserter = new asserter::lower_than<Expected, Expected>();
     }
@@ -336,7 +336,7 @@ private:
     asserter::base_asserter<Expected, Expected> *asserter;
 
 public:
-    assert_greater_equal(Grammar &grammar, Space &space): assertion(grammar, space)
+    assert_greater_equal(Grammar &grammar, const Space &space): assertion(grammar, space)
     {
         asserter = new asserter::greater_equal<Expected, Expected>();
     }
@@ -360,7 +360,7 @@ private:
     asserter::base_asserter<Expected, Expected> *asserter;
 
 public:
-    assert_lower_equal(Grammar &grammar, Space &space): assertion(grammar, space)
+    assert_lower_equal(Grammar &grammar, const Space &space): assertion(grammar, space)
     {
         asserter = new asserter::lower_equal<Expected, Expected>();
     }
@@ -412,7 +412,7 @@ private:
     std::list<std::function<void()>> test_cases;
 
 public:
-    test_suite &operator<< (std::function<void()> &test_case);
+    test_suite &operator<< (std::function<void()> test_case);
     test_suite &operator() ();
 };
 
