@@ -9,7 +9,8 @@
 #include <list>
 #include <map>
 #include <tuple>
-#include <boost/variant.hpp>
+
+#include "variant.h"
 
 namespace rephp {
 
@@ -80,10 +81,12 @@ typedef std::shared_ptr<internal_type>       type_t;
 typedef std::shared_ptr<internal_value>      value_t;
 typedef std::shared_ptr<bundle>              bundle_t;
 
+struct null;
+
 typedef bool                            boolean_t;
 typedef char                            character_t;
-typedef signed long                     integer_t;
-typedef double                          float_t;
+typedef long                            integer_t;
+typedef double                          real_t;
 typedef std::string                     string_t;
 typedef std::vector<value_t>            vector_t;
 typedef std::list<value_t>              list_t;
@@ -93,12 +96,14 @@ typedef std::map<value_t,value_t>       registry_t;
 typedef std::multimap<value_t,value_t>  repository_t;
 typedef std::shared_ptr<std::iostream>  stream_t;
 typedef std::shared_ptr<void>           resource_t;
+typedef struct null                     null_t;
 
-typedef boost::variant<
+typedef type::infinite_variant<
+    null_t,
     boolean_t,
     character_t,
     integer_t,
-    float_t,
+    real_t,
     string_t,
     vector_t,
     list_t,
@@ -119,6 +124,48 @@ typedef std::map<string_t, std::tuple<type_t, access_mode_t>>   attributes_map_t
 typedef std::map<string_t, value_t>                             value_attributes_map_t;
 typedef std::multimap<string_t, method_t>                       methods_map_t;
 typedef std::multimap<operator_t, method_t>                     operators_map_t;
+
+struct null
+{
+    null()
+    {}
+
+    null(const null &)
+    {}
+
+    null(null &&)
+    {}
+
+    null &operator= (const null &)
+    {
+        return *this;
+    }
+
+    null &operator= (null &&)
+    {
+        return *this;
+    }
+
+    bool operator== (const null &) const
+    {
+        return false;
+    }
+
+    bool operator== (null)
+    {
+        return false;
+    }
+
+    bool operator!= (const null &) const
+    {
+        return true;
+    }
+
+    bool operator!= (null)
+    {
+        return true;
+    }
+};
 
 template<typename K, typename V>
 inline K &get_key(std::pair<K,V> &current)
