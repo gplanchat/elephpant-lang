@@ -1,5 +1,6 @@
 
 #include "../engine/engine.h"
+#include "../engine/parser/ast.h"
 #include "../engine/parser/php.h"
 #include "tests.h"
 #include "scalar.h"
@@ -13,21 +14,22 @@ namespace parser {
 
 using boost::spirit::ascii::space;
 using boost::spirit::ascii::space_type;
+namespace ast = rephp::engine::parser::ast;
 
 boolean::boolean(): suite()
 {
     suite << (std::function<void()>([]() {
         grammar_t parser;
-        std::string sources("false;");
+        std::string sources("false");
 
-        assert_false<grammar_t,space_type> is_false(parser, space);
+        assert_false<grammar_t,space_type,ast::expression_t> is_false(parser, space);
         is_false(sources, "basic boolean, false.");
     })) << (std::function<void()>([]() {
         grammar_t parser;
-        std::string sources("false;");
+        std::string sources("true");
 
-        assert_true<grammar_t,space_type> is_true(parser, space);
-        is_true(sources, "basic boolean, false.");
+        assert_true<grammar_t,space_type,ast::expression_t> is_true(parser, space);
+        is_true(sources, "basic boolean, true.");
     }));
 }
 
@@ -91,73 +93,73 @@ real::real(): suite()
         std::string sources("13.37e2;");
 
         assert_equals<grammar_t,space_type,double> is_equal(parser, space);
-        is_equal(sources, "positive double (exp), [13.37e2].", .1337);
+        is_equal(sources, "positive double (exp), [13.37e2].", 1337.);
     })) << (std::function<void()>([]() {
         grammar_t parser;
         std::string sources("-13.37e2;");
 
         assert_equals<grammar_t,space_type,double> is_equal(parser, space);
-        is_equal(sources, "negative double (exp), [-13.37e2].", -.1337);
+        is_equal(sources, "negative double (exp), [-13.37e2].", -1337.);
     })) << (std::function<void()>([]() {
         grammar_t parser;
         std::string sources("13.37e+2;");
 
         assert_equals<grammar_t,space_type,double> is_equal(parser, space);
-        is_equal(sources, "positive double (exp), [13.37e+2].", .1337);
+        is_equal(sources, "positive double (exp), [13.37e+2].", 1337.);
     })) << (std::function<void()>([]() {
         grammar_t parser;
         std::string sources("-13.37e+2;");
 
         assert_equals<grammar_t,space_type,double> is_equal(parser, space);
-        is_equal(sources, "negative double (exp), [-13.37e+2].", -.1337);
+        is_equal(sources, "negative double (exp), [-13.37e+2].", -1337.);
     })) << (std::function<void()>([]() {
         grammar_t parser;
         std::string sources("13.37e-2;");
 
         assert_equals<grammar_t,space_type,double> is_equal(parser, space);
-        is_equal(sources, "positive double (exp), [13.37e-2].", 1337.);
+        is_equal(sources, "positive double (exp), [13.37e-2].", .1337);
     })) << (std::function<void()>([]() {
         grammar_t parser;
         std::string sources("-13.37e-2;");
 
         assert_equals<grammar_t,space_type,double> is_equal(parser, space);
-        is_equal(sources, "negative double (exp), [-13.37e-2].", -1337.);
+        is_equal(sources, "negative double (exp), [-13.37e-2].", -.1337);
     })) << (std::function<void()>([]() {
         grammar_t parser;
         std::string sources("13.37E2;");
 
         assert_equals<grammar_t,space_type,double> is_equal(parser, space);
-        is_equal(sources, "positive double (exp), [13.37E2].", .1337);
+        is_equal(sources, "positive double (exp), [13.37E2].", 1337.);
     })) << (std::function<void()>([]() {
         grammar_t parser;
         std::string sources("-13.37E2;");
 
         assert_equals<grammar_t,space_type,double> is_equal(parser, space);
-        is_equal(sources, "negative double (exp), [-13.37E2].", -.1337);
+        is_equal(sources, "negative double (exp), [-13.37E2].", -1337.);
     })) << (std::function<void()>([]() {
         grammar_t parser;
         std::string sources("13.37E+2;");
 
         assert_equals<grammar_t,space_type,double> is_equal(parser, space);
-        is_equal(sources, "positive double (exp), [13.37E+2].", .1337);
+        is_equal(sources, "positive double (exp), [13.37E+2].", 1337.);
     })) << (std::function<void()>([]() {
         grammar_t parser;
         std::string sources("-13.37E+2;");
 
         assert_equals<grammar_t,space_type,double> is_equal(parser, space);
-        is_equal(sources, "negative double (exp), [-13.37E+2].", -.1337);
+        is_equal(sources, "negative double (exp), [-13.37E+2].", -1337.);
     })) << (std::function<void()>([]() {
         grammar_t parser;
         std::string sources("13.37E-2;");
 
         assert_equals<grammar_t,space_type,double> is_equal(parser, space);
-        is_equal(sources, "positive double (exp), [13.37E-2].", 1337.);
+        is_equal(sources, "positive double (exp), [13.37E-2].", .1337);
     })) << (std::function<void()>([]() {
         grammar_t parser;
         std::string sources("-13.37E-2;");
 
         assert_equals<grammar_t,space_type,double> is_equal(parser, space);
-        is_equal(sources, "negative double (exp), [-13.37E-2].", -1337.);
+        is_equal(sources, "negative double (exp), [-13.37E-2].", -.1337);
     })) << (std::function<void()>([]() {
         grammar_t parser;
         std::string sources(".1337e2;");

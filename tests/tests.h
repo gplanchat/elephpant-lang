@@ -187,17 +187,17 @@ public:
     }
 };
 
-template<typename Grammar, typename Space>
+template<typename Grammar, typename Space, typename Expected = bool>
 class assert_true
 {
 private:
-    assertion<Grammar, Space>            assertion;
-    asserter::base_asserter<bool, bool> *asserter;
+    assertion<Grammar, Space>                    assertion;
+    asserter::base_asserter<Expected, Expected> *asserter;
 
 public:
     assert_true(Grammar &grammar, const Space &space): assertion(grammar, space)
     {
-        asserter = new asserter::equals<bool, bool>();
+        asserter = new asserter::equals<Expected, Expected>();
     }
 
     ~assert_true()
@@ -207,21 +207,21 @@ public:
 
     bool operator() (std::string input, std::string message)
     {
-        return assertion(*asserter, input, value_bag<bool>(true), message);
+        return assertion(*asserter, input, value_bag<Expected>(true), message);
     }
 };
 
-template<typename Grammar, typename Space>
+template<typename Grammar, typename Space, typename Expected = bool>
 class assert_false
 {
 private:
-    assertion<Grammar, Space>            assertion;
-    asserter::base_asserter<bool, bool> *asserter;
+    assertion<Grammar, Space>                    assertion;
+    asserter::base_asserter<Expected, Expected> *asserter;
 
 public:
     assert_false(Grammar &grammar, const Space &space): assertion(grammar, space)
     {
-        asserter = new asserter::equals<bool, bool>();
+        asserter = new asserter::equals<Expected, Expected>();
     }
 
     ~assert_false()
@@ -231,7 +231,7 @@ public:
 
     bool operator() (std::string input, std::string message)
     {
-        return assertion(*asserter, input, value_bag<bool>(false), message);
+        return assertion(*asserter, input, value_bag<Expected>(false), message);
     }
 };
 

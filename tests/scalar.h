@@ -26,7 +26,7 @@ public:
 class integer
 {
 public:
-    typedef grammar::boolean<std::string::iterator, space_type> grammar_t;
+    typedef grammar::integer<std::string::iterator, space_type> grammar_t;
 
     test_suite suite;
 
@@ -36,7 +36,7 @@ public:
 class real
 {
 public:
-    typedef grammar::boolean<std::string::iterator, space_type> grammar_t;
+    typedef grammar::real<std::string::iterator, space_type> grammar_t;
 
     test_suite suite;
 
