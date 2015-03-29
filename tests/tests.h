@@ -161,7 +161,6 @@ public:
         }
 
         auto actual = value_bag<Expected>(result);
-
         if (asserter(expected, actual)) {
             success(message);
             return true;

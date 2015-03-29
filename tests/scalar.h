@@ -43,6 +43,16 @@ public:
     real();
 };
 
+class scalar
+{
+public:
+    typedef grammar::scalar<std::string::iterator, space_type> grammar_t;
+
+    test_suite suite;
+
+    scalar();
+};
+
 }; // namespace parser
 
 };
