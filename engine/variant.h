@@ -453,7 +453,7 @@ public:
     infinite_variant(Type&& value)
     {
         static_assert(
-            !std::is_same<infinite_variant<First, Typeypes...>&, Type>::value,
+            !std::is_same<infinite_variant<First, Types...>&, Type>::value,
             "why is infinite_variant(Type&&) instantiated with a infinite_variant?"
         );
 
@@ -678,14 +678,14 @@ variant_is_type(const Visitor& visitor)
 
 template<typename Visitor, typename Visitable1, typename Visitable2>
 typename std::remove_reference<Visitor>::type::result_type
-apply_visitor_binary(Visitor&& visitor, Visitable1&& v1, Visitable2&& v2)
+apply_visitor_binary(Visitor&& visitor, Visitable1&& visitable_left, Visitable2&& visitable_right)
 {
-    detail::binary_visitor<Visitor, Visitable1> visitor{
+    detail::binary_visitor<Visitor, Visitable1> v{
         std::forward<Visitor>(visitor),
-        std::forward<Visitable1>(v1)
+        std::forward<Visitable1>(visitable_left)
     };
 
-    return apply_visitor(visitor, std::forward<Visitable2>(v2));
+    return apply_visitor(v, std::forward<Visitable2>(visitable_right));
 }
 
 }; }; };
