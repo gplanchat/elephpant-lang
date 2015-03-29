@@ -8,10 +8,9 @@
 #include <map>
 #include <vector>
 
-#include <boost/variant.hpp>
-
 #include "engine.h"
 #include "types.h"
+#include "variant.h"
 
 namespace rephp {
 
@@ -22,9 +21,14 @@ namespace visitor {
 using namespace std;
 using namespace rephp::engine;
 
-class internal_value_stream_visitor: public boost::static_visitor<type::string_t>
+class internal_value_stream_visitor: public type::static_visitor<type::string_t>
 {
 public:
+    inline type::string_t operator() (type::null_t) const
+    {
+        return "null";
+    }
+
     inline type::string_t operator() (type::boolean_t value) const
     {
         return type::string_t(value ? "true" : "false");
@@ -40,7 +44,7 @@ public:
         return to_string(value);
     }
 
-    inline type::string_t operator() (type::float_t value) const
+    inline type::string_t operator() (type::real_t value) const
     {
         return to_string(value);
     }
@@ -107,35 +111,35 @@ public:
 
 
 template<typename T>
-class internal_value_scalar_get_visitor: public boost::static_visitor<T>
+class internal_value_scalar_get_visitor: public type::static_visitor<T>
 {
 public:
     template<typename U>
     T operator() (U value) const;
 };
 
-class internal_value_string_get_visitor: public boost::static_visitor<type::string_t>
+class internal_value_string_get_visitor: public type::static_visitor<type::string_t>
 {
 public:
     template<typename T>
     type::string_t operator() (T value) const;
 };
 
-class internal_value_vector_get_visitor: public boost::static_visitor<type::vector_t>
+class internal_value_vector_get_visitor: public type::static_visitor<type::vector_t>
 {
 public:
     template<typename T>
     type::vector_t operator() (T value) const;
 };
 
-class internal_value_map_get_visitor: public boost::static_visitor<map<type::string_t,type::value_t>>
+class internal_value_map_get_visitor: public type::static_visitor<map<type::string_t,type::value_t>>
 {
 public:
     template<typename T>
     map<type::string_t,type::value_t> operator() (T value) const;
 };
 
-class internal_value_resource_get_visitor: public boost::static_visitor<shared_ptr<void>>
+class internal_value_resource_get_visitor: public type::static_visitor<shared_ptr<void>>
 {
 public:
     template<typename T>
