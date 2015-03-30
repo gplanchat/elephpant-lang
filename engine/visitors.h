@@ -106,6 +106,8 @@ public:
 
 };
 
+std::ostream &operator<< (std::ostream &ios, rephp::engine::type::internal_variant_t &var);
+
 /*
 
 

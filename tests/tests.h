@@ -7,9 +7,15 @@
 #include <boost/spirit/include/qi.hpp>
 #include <boost/spirit/include/support_istream_iterator.hpp>
 
+#include "../engine/parser/ast.h"
+#include "../engine/visitors.h"
+
 namespace rephp {
 
 namespace test {
+
+namespace ast = rephp::engine::parser::ast;
+using rephp::engine::visitor::internal_value_stream_visitor;
 
 template<typename Type>
 class value_bag
@@ -123,8 +129,10 @@ class assertion
     Space   space;
 
     void success(std::string message);
-    void error(std::string message);
-    void failure(std::string message);
+    template<typename Type>
+    void error(std::string message, Type &expected);
+    template<typename Type>
+    void failure(std::string message, Type &expected, Type &actual);
     void ignore(std::string message);
     void exception(std::string message);
 
@@ -142,10 +150,10 @@ public:
             if (!phrase_parse(begin, end, grammar, space, result)) {
                 if (message.size() > 0) {
                     str = "Parsing failed: " + message;
-                    failure(str);
+                    error(str, expected.value);
                 } else {
                     str = "Parsing failed.";
-                    failure(str);
+                    error(str, expected.value);
                 }
                 return false;
             }
@@ -168,10 +176,10 @@ public:
 
         if (message.size() > 0) {
             str = "Failure: " + message;
-            failure(str);
+            failure(str, expected.value, actual.value);
         } else {
             str = "Failure";
-            failure(str);
+            failure(str, expected.value, actual.value);
         }
 
         return false;
@@ -387,19 +395,24 @@ assertion<Grammar,Space>::success(std::string message)
 }
 
 template<typename Grammar, typename Space>
+template<typename Type>
 void
-assertion<Grammar,Space>::error(std::string message)
+assertion<Grammar,Space>::error(std::string message, Type &expected)
 {
     // fg.white(31); bg.red(47);
     std::cerr << "[ \e[5;31;47mERROR\e[0m ] - \e[1;37m" << message << "\e[0m" << std::endl;
+    std::cerr << "Expectation was : [ \e[5;31;47m" << expected << "\e[0m ]" << std::endl;
 }
 
 template<typename Grammar, typename Space>
+template<typename Type>
 void
-assertion<Grammar,Space>::failure(std::string message)
+assertion<Grammar,Space>::failure(std::string message, Type &expected, Type &actual)
 {
     // fg.white(37); bg.red(41);
     std::cerr << "[ \e[5;37;41mFAILURE\e[0m ] - \e[1;31m" << message << "\e[0m" << std::endl;
+    std::cerr << "Expectation was :  [ \e[5;30;46m" << expected << "\e[0m ]" << std::endl;
+    std::cerr << "Actual value was : [ \e[5;31;47m" << actual << "\e[0m ]" << std::endl;
 }
 
 template<typename Grammar, typename Space>
