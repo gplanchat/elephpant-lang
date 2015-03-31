@@ -83,6 +83,7 @@ typedef std::shared_ptr<bundle>              bundle_t;
 
 struct null;
 
+typedef struct null                     null_t;
 typedef bool                            boolean_t;
 typedef char                            character_t;
 typedef long                            integer_t;
@@ -96,7 +97,6 @@ typedef std::map<value_t,value_t>       registry_t;
 typedef std::multimap<value_t,value_t>  repository_t;
 typedef std::shared_ptr<std::iostream>  stream_t;
 typedef std::shared_ptr<void>           resource_t;
-typedef struct null                     null_t;
 
 typedef type::infinite_variant<
     null_t,
@@ -148,22 +148,22 @@ struct null
 
     bool operator== (const null &) const
     {
-        return false;
+        return true;
     }
 
     bool operator== (null)
     {
-        return false;
+        return true;
     }
 
     bool operator!= (const null &) const
     {
-        return true;
+        return false;
     }
 
     bool operator!= (null)
     {
-        return true;
+        return false;
     }
 };
 

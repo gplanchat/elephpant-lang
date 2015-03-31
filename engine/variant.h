@@ -642,7 +642,9 @@ const Type&
 get (const infinite_variant<First, Types...>& var)
 {
     const Type* value = apply_visitor(get_visitor<const Type>(), var);
-    if (value == nullptr) {throw bad_get();}
+    if (value == nullptr) {
+        throw bad_get();
+    }
 
     return *value;
 }
@@ -669,11 +671,11 @@ public:
     }
 };
 
-template<typename Type, typename Visitor>
+template<typename Type, typename Variant>
 bool
-variant_is_type(const Visitor& visitor)
+variant_is_type(const Variant& variant)
 {
-    return get<Type>(&visitor) != nullptr;
+    return get<Type>(&variant) != nullptr;
 }
 
 template<typename Visitor, typename Visitable1, typename Visitable2>
