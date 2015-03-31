@@ -13,6 +13,16 @@ namespace parser {
 namespace grammar = rephp::engine::parser::grammar::php;
 using boost::spirit::ascii::space_type;
 
+class null
+{
+public:
+    typedef grammar::null<std::string::iterator, space_type> grammar_t;
+
+    test_suite suite;
+
+    null();
+};
+
 class boolean
 {
 public:

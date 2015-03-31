@@ -7,14 +7,16 @@
 #include <boost/spirit/include/qi.hpp>
 #include <boost/spirit/include/support_istream_iterator.hpp>
 
+#include "../engine/types.h"
 #include "../engine/parser/ast.h"
-#include "../engine/visitors.h"
+#include "../engine/variant.h"
 
 namespace rephp {
 
 namespace test {
 
 namespace ast = rephp::engine::parser::ast;
+namespace type = rephp::engine::type;
 using rephp::engine::visitor::internal_value_stream_visitor;
 
 template<typename Type>
@@ -32,8 +34,25 @@ template<typename Expected, typename Actual>
 class base_asserter
 {
 public:
-    virtual ~base_asserter() {}
-    virtual bool operator() (value_bag<Expected> &expected, value_bag<Actual> &actual) = 0;
+    virtual ~base_asserter()
+    {}
+
+    virtual bool operator() (value_bag<Actual> &)
+    {
+        return false;
+    }
+
+    virtual bool operator() (value_bag<Expected> &, value_bag<Actual> &)
+    {
+        return false;
+    }
+};
+
+template<typename Variant, typename Type>
+class variant_is_type: public base_asserter<Variant, Variant>
+{
+public:
+    bool operator() (value_bag<Variant> &actual);
 };
 
 template<typename Expected, typename Actual>
@@ -77,6 +96,13 @@ class lower_equal: public base_asserter<Expected, Actual>
 public:
     bool operator() (value_bag<Expected> &expected, value_bag<Actual> &actual);
 };
+
+template<typename Variant, typename Type>
+bool
+variant_is_type<Variant, Type>::operator() (value_bag<Variant> &actual)
+{
+    return type::variant_is_type<Type>(actual.value);
+}
 
 template<typename Expected, typename Actual>
 bool
@@ -194,6 +220,30 @@ public:
     }
 };
 
+template<typename Grammar, typename Space, typename Variant, typename Type>
+class assert_variant_is_type
+{
+private:
+    assertion<Grammar, Space>                  assertion;
+    asserter::base_asserter<Variant, Variant> *asserter;
+
+public:
+    assert_variant_is_type(Grammar &grammar, const Space &space): assertion(grammar, space)
+    {
+        asserter = new asserter::variant_is_type<Variant, Type>();
+    }
+
+    ~assert_variant_is_type()
+    {
+        delete asserter;
+    }
+
+    bool operator() (std::string input, Type expected, std::string message)
+    {
+        return assertion(*asserter, input, value_bag<Variant>(expected), message);
+    }
+};
+
 template<typename Grammar, typename Space, typename Expected = bool>
 class assert_true
 {
@@ -260,7 +310,7 @@ public:
         delete asserter;
     }
 
-    bool operator() (std::string input, std::string message, Expected expected)
+    bool operator() (std::string input, Expected expected, std::string message)
     {
         return assertion(*asserter, input, value_bag<Expected>(expected), message);
     }
@@ -284,7 +334,7 @@ public:
         delete asserter;
     }
 
-    bool operator() (std::string input, std::string message, Expected expected)
+    bool operator() (std::string input, Expected expected, std::string message)
     {
         return assertion(*asserter, input, value_bag<Expected>(expected), message);
     }
@@ -308,7 +358,7 @@ public:
         delete asserter;
     }
 
-    bool operator() (std::string input, std::string message, Expected expected)
+    bool operator() (std::string input, Expected expected, std::string message)
     {
         return assertion(*asserter, input, value_bag<Expected>(expected), message);
     }
@@ -332,7 +382,7 @@ public:
         delete asserter;
     }
 
-    bool operator() (std::string input, std::string message, Expected expected)
+    bool operator() (std::string input, Expected expected, std::string message)
     {
         return assertion(*asserter, input, value_bag<Expected>(expected), message);
     }
@@ -356,7 +406,7 @@ public:
         delete asserter;
     }
 
-    bool operator() (std::string input, std::string message, Expected expected)
+    bool operator() (std::string input, Expected expected, std::string message)
     {
         return assertion(*asserter, input, value_bag<Expected>(expected), message);
     }
@@ -380,7 +430,7 @@ public:
         delete asserter;
     }
 
-    bool operator() (std::string input, std::string message, Expected expected)
+    bool operator() (std::string input, Expected expected, std::string message)
     {
         return assertion(*asserter, input, value_bag<Expected>(expected), message);
     }
