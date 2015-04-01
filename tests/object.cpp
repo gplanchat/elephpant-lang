@@ -42,6 +42,12 @@ class_identifier::class_identifier(): suite()
         std::string sources("Foo\\2Foo");
 
         assert_parse_failure<grammar_t,space_type> parse_failure(parser, space);
+        parse_failure(sources, "namespaced errored class identifier.", false);
+    })) << (std::function<void()>([]() {
+        grammar_t parser;
+        std::string sources("2Foo\\Foo");
+
+        assert_parse_failure<grammar_t,space_type> parse_failure(parser, space);
         parse_failure(sources, "errored namespaced class identifier.");
     }));
 }

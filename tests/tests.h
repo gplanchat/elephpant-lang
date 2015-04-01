@@ -163,13 +163,14 @@ public:
     {}
 
     template<typename Iterator, typename Expected>
-    bool operator() (asserter::base_asserter<Expected, Expected> &asserter, Iterator &begin, Iterator &end, value_bag<Expected> expected, std::string message)
+    bool operator() (asserter::base_asserter<Expected, Expected> &asserter, Iterator &begin, Iterator &end, value_bag<Expected> expected, std::string message, bool fail_on_partial_match = true)
     {
         Expected result;
         std::string str;
+        auto it = begin;
 
         try {
-            if (!phrase_parse(begin, end, grammar, space, result)) {
+            if (!phrase_parse(it, end, grammar, space, result)) {
                 if (message.size() > 0) {
                     str = "Parsing failed: " + message;
                     error(str, expected.value);
@@ -196,6 +197,21 @@ public:
             return true;
         }
 
+        if (fail_on_partial_match && it != end) {
+            if (message.size() > 0) {
+                str = "Parsing succeeded with an incomplete match, read "
+                      + std::to_string(std::distance(begin, it)) + " chars, missing "
+                      + std::to_string(std::distance(it, end)) + " chars: " + message;
+                failure(str);
+            } else {
+                str = "Parsing succeeded with an incomplete match, read "
+                      + std::to_string(std::distance(begin, it)) + " chars, missing "
+                      + std::to_string(std::distance(it, end)) + " chars";
+                failure(str);
+            }
+            return false;
+        }
+
         if (message.size() > 0) {
             str = "Failure: " + message;
             failure(str, expected.value, actual.value);
@@ -208,20 +224,38 @@ public:
     }
 
     template<typename Iterator>
-    bool operator() (Iterator &begin, Iterator &end, std::string message)
+    bool operator() (Iterator &begin, Iterator &end, std::string message, bool fail_on_partial_match = true)
     {
         std::string str;
+        auto it = begin;
 
         try {
-            if (phrase_parse(begin, end, grammar, space)) {
-                if (message.size() > 0) {
-                    str = "Parsing succeeded, while it shouldn't: " + message;
-                    failure(str);
-                } else {
-                    str = "Parsing succeeded, while it shouldn't.";
-                    failure(str);
+            if (phrase_parse(it, end, grammar, space)) {
+                if (fail_on_partial_match) {
+                    if (begin != end) {
+                        if (message.size() > 0) {
+                            str = "Parsing succeeded (while it shouldn't) with an incomplete match, read "
+                                  + std::to_string(std::distance(begin, it)) + " chars, missing "
+                                  + std::to_string(std::distance(it, end)) + " chars: " + message;
+                            failure(str);
+                        } else {
+                            str = "Parsing succeeded (while it shouldn't) with an incomplete match, read "
+                                  + std::to_string(std::distance(begin, it)) + " chars, missing "
+                                  + std::to_string(std::distance(it, end)) + " chars";
+                            failure(str);
+                        }
+                        return false;
+                    }
+
+                    if (message.size() > 0) {
+                        str = "Parsing succeeded, while it shouldn't: " + message;
+                        failure(str);
+                    } else {
+                        str = "Parsing succeeded, while it shouldn't.";
+                        failure(str);
+                    }
+                    return false;
                 }
-                return false;
             }
         } catch (...) {
             if (message.size() > 0) {
@@ -246,18 +280,18 @@ public:
     }
 
     template<typename Expected>
-    bool operator() (asserter::base_asserter<Expected, Expected> &asserter, std::string input, value_bag<Expected> expected, std::string message)
+    bool operator() (asserter::base_asserter<Expected, Expected> &asserter, std::string input, value_bag<Expected> expected, std::string message, bool fail_on_partial_match = true)
     {
         auto it = input.begin();
         auto end = input.end();
-        return (*this)(asserter, it, end, expected, message);
+        return (*this)(asserter, it, end, expected, message, fail_on_partial_match);
     }
 
-    bool operator() (std::string input, std::string message)
+    bool operator() (std::string input, std::string message, bool fail_on_partial_match = true)
     {
         auto it = input.begin();
         auto end = input.end();
-        return (*this)(it, end, message);
+        return (*this)(it, end, message, fail_on_partial_match);
     }
 };
 
@@ -279,9 +313,9 @@ public:
         delete asserter;
     }
 
-    bool operator() (std::string input, Type expected, std::string message)
+    bool operator() (std::string input, Type expected, std::string message, bool fail_on_partial_match = true)
     {
-        return assertion(*asserter, input, value_bag<Variant>(expected), message);
+        return assertion(*asserter, input, value_bag<Variant>(expected), message, fail_on_partial_match);
     }
 };
 
@@ -303,9 +337,9 @@ public:
         delete asserter;
     }
 
-    bool operator() (std::string input, std::string message)
+    bool operator() (std::string input, std::string message, bool fail_on_partial_match = true)
     {
-        return assertion(*asserter, input, value_bag<Expected>(true), message);
+        return assertion(*asserter, input, value_bag<Expected>(true), message, fail_on_partial_match);
     }
 };
 
@@ -327,9 +361,9 @@ public:
         delete asserter;
     }
 
-    bool operator() (std::string input, std::string message)
+    bool operator() (std::string input, std::string message, bool fail_on_partial_match = true)
     {
-        return assertion(*asserter, input, value_bag<Expected>(false), message);
+        return assertion(*asserter, input, value_bag<Expected>(false), message, fail_on_partial_match);
     }
 };
 
@@ -351,9 +385,9 @@ public:
         delete asserter;
     }
 
-    bool operator() (std::string input, Expected expected, std::string message)
+    bool operator() (std::string input, Expected expected, std::string message, bool fail_on_partial_match = true)
     {
-        return assertion(*asserter, input, value_bag<Expected>(expected), message);
+        return assertion(*asserter, input, value_bag<Expected>(expected), message, fail_on_partial_match);
     }
 };
 
@@ -375,9 +409,9 @@ public:
         delete asserter;
     }
 
-    bool operator() (std::string input, Expected expected, std::string message)
+    bool operator() (std::string input, Expected expected, std::string message, bool fail_on_partial_match = true)
     {
-        return assertion(*asserter, input, value_bag<Expected>(expected), message);
+        return assertion(*asserter, input, value_bag<Expected>(expected), message, fail_on_partial_match);
     }
 };
 
@@ -399,9 +433,9 @@ public:
         delete asserter;
     }
 
-    bool operator() (std::string input, Expected expected, std::string message)
+    bool operator() (std::string input, Expected expected, std::string message, bool fail_on_partial_match = true)
     {
-        return assertion(*asserter, input, value_bag<Expected>(expected), message);
+        return assertion(*asserter, input, value_bag<Expected>(expected), message, fail_on_partial_match);
     }
 };
 
@@ -423,9 +457,9 @@ public:
         delete asserter;
     }
 
-    bool operator() (std::string input, Expected expected, std::string message)
+    bool operator() (std::string input, Expected expected, std::string message, bool fail_on_partial_match = true)
     {
-        return assertion(*asserter, input, value_bag<Expected>(expected), message);
+        return assertion(*asserter, input, value_bag<Expected>(expected), message, fail_on_partial_match);
     }
 };
 
@@ -447,9 +481,9 @@ public:
         delete asserter;
     }
 
-    bool operator() (std::string input, Expected expected, std::string message)
+    bool operator() (std::string input, Expected expected, std::string message, bool fail_on_partial_match = true)
     {
-        return assertion(*asserter, input, value_bag<Expected>(expected), message);
+        return assertion(*asserter, input, value_bag<Expected>(expected), message, fail_on_partial_match);
     }
 };
 
@@ -471,9 +505,9 @@ public:
         delete asserter;
     }
 
-    bool operator() (std::string input, Expected expected, std::string message)
+    bool operator() (std::string input, Expected expected, std::string message, bool fail_on_partial_match = true)
     {
-        return assertion(*asserter, input, value_bag<Expected>(expected), message);
+        return assertion(*asserter, input, value_bag<Expected>(expected), message, fail_on_partial_match);
     }
 };
 
@@ -490,9 +524,9 @@ public:
     ~assert_parse_failure()
     {}
 
-    bool operator() (std::string input, std::string message)
+    bool operator() (std::string input, std::string message, bool fail_on_partial_match = true)
     {
-        return assertion(input, message);
+        return assertion(input, message, fail_on_partial_match);
     }
 };
 
