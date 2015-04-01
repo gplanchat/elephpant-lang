@@ -151,7 +151,7 @@ class assertion
 
     void success(std::string message);
     template<typename Type>
-    void error(std::string message, Type &expected);
+    void error(std::string message, Type &expected, Type &actual);
     void failure(std::string message);
     template<typename Type>
     void failure(std::string message, Type &expected, Type &actual);
@@ -173,10 +173,10 @@ public:
             if (!phrase_parse(it, end, grammar, space, result)) {
                 if (message.size() > 0) {
                     str = "Parsing failed: " + message;
-                    error(str, expected.value);
+                    error(str, expected.value, result);
                 } else {
                     str = "Parsing failed.";
-                    error(str, expected.value);
+                    error(str, expected.value, result);
                 }
                 return false;
             }
@@ -200,13 +200,13 @@ public:
         if (fail_on_partial_match && it != end) {
             if (message.size() > 0) {
                 str = "Parsing succeeded with an incomplete match, read "
-                      + std::to_string(std::distance(begin, it)) + " chars, missing "
-                      + std::to_string(std::distance(it, end)) + " chars: " + message;
+                    + std::to_string(std::distance(begin, it)) + " chars, missing "
+                    + std::to_string(std::distance(it, end)) + " chars: " + message;
                 failure(str);
             } else {
                 str = "Parsing succeeded with an incomplete match, read "
-                      + std::to_string(std::distance(begin, it)) + " chars, missing "
-                      + std::to_string(std::distance(it, end)) + " chars";
+                    + std::to_string(std::distance(begin, it)) + " chars, missing "
+                    + std::to_string(std::distance(it, end)) + " chars";
                 failure(str);
             }
             return false;
@@ -541,11 +541,12 @@ assertion<Grammar,Space>::success(std::string message)
 template<typename Grammar, typename Space>
 template<typename Type>
 void
-assertion<Grammar,Space>::error(std::string message, Type &expected)
+assertion<Grammar,Space>::error(std::string message, Type &expected, Type &actual)
 {
     // fg.white(31); bg.red(47);
     std::cerr << "[ \e[5;31;47mERROR\e[0m ] - \e[1;37m" << message << "\e[0m" << std::endl;
-    std::cerr << "Expectation was : [ \e[5;31;47m" << expected << "\e[0m ]" << std::endl;
+    std::cerr << "Expectation was : [ \e[5;30;46m" << expected << "\e[0m ]" << std::endl;
+    std::cerr << "Actual value was : [ \e[5;31;47m" << actual << "\e[0m ]" << std::endl;
 }
 
 template<typename Grammar, typename Space>

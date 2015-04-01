@@ -27,10 +27,10 @@ class_identifier::class_identifier(): suite()
         is_equal(sources, type::string_t("Foo"), "simple class identifier.");
     })) << (std::function<void()>([]() {
         grammar_t parser;
-        std::string sources("Foo\\Bar");
+        std::string sources("Foo\\MyClass");
 
         assert_equals<grammar_t,space_type,type::string_t> is_equal(parser, space);
-        is_equal(sources, type::string_t("Foo\\Bar"), "namespaced class identifier.");
+        is_equal(sources, type::string_t("Foo\\MyClass"), "namespaced class identifier.");
     })) << (std::function<void()>([]() {
         grammar_t parser;
         std::string sources("2Foo");

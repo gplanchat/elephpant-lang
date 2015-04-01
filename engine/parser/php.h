@@ -352,11 +352,11 @@ private:
     {
         namespace qi = boost::spirit::qi;
 
-        separator_char.add("\\\\", '\\');
+        //separator_char.add("\\", '\\');
 
         base_identifier %= qi::lexeme [ qi::char_("a-zA-Z_") >> *qi::char_("a-zA-Z0-9_") ];
 
-        root %= base_identifier >> !(separator_char >> base_identifier);
+        root %= qi::as_string [ base_identifier >> *(qi::char_('\\') >> base_identifier) ];
     }
 
 public:
@@ -378,7 +378,7 @@ public:
     qi::rule<Iterator,type::string_t(),Skipper> base_identifier;
     qi::rule<Iterator,type::string_t(),Skipper> root;
 
-    qi::symbols<char const, char const> separator_char;
+    //qi::symbols<char const, char const> separator_char;
 };
 
 template <typename Iterator, typename Skipper>
