@@ -9,7 +9,9 @@ namespace ast {
 std::ostream &expression_dump(std::ostream &ios, expression_t &expr, size_t offset)
 {
     auto padding = std::string(offset * 4, ' ');
-    if (type::variant_is_type<type::boolean_t>(expr)) {
+    if (type::variant_is_type<type::null_t>(expr)) {
+        ios << padding << "null";
+    } else if (type::variant_is_type<type::boolean_t>(expr)) {
         ios << padding << "boolean(" << (type::get<type::boolean_t>(expr) ? "true" : "false") << ")";
     } else if (type::variant_is_type<type::integer_t>(expr)) {
         ios << padding << "integer(" << type::get<type::integer_t>(expr) << ")";

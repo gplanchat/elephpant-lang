@@ -6,7 +6,7 @@ TEST_EXEC=run-tests
 
 ENGINE=engine/engine.o engine/visitors.o engine/parser/ast.o
 LANG=lang/standard.o lang/stream.o
-TESTS=tests/main.o tests/tests.o tests/scalar.o tests/string.o $(ENGINE) $(LANG)
+TESTS=tests/main.o tests/tests.o tests/scalar.o tests/string.o tests/object.o $(ENGINE) $(LANG)
 OBJ=main.o $(ENGINE) $(LANG)
 
 

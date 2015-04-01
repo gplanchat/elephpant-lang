@@ -7,13 +7,14 @@
 
 #include <boost/spirit/include/qi.hpp>
 
-#include "engine/engine.h"
-#include "engine/parser/php.h"
-#include "engine/reflection.h"
-#include "lang/standard.h"
+#include "../engine/engine.h"
+#include "../engine/parser/php.h"
+#include "../engine/reflection.h"
+#include "../lang/standard.h"
 
-#include "tests/scalar.h"
-#include "tests/string.h"
+#include "scalar.h"
+#include "string.h"
+#include "object.h"
 
 std::map<std::string, size_t> rephp::engine::parser::ast::node::counters;
 
@@ -40,6 +41,7 @@ int main()
     test::double_quoted_string double_quoted_string;
     test::simple_quoted_string simple_quoted_string;
     test::string string;
+    test::class_identifier identifier;
 
     null.suite();
     boolean.suite();
@@ -49,6 +51,7 @@ int main()
     double_quoted_string.suite();
     simple_quoted_string.suite();
     string.suite();
+    identifier.suite();
 
     return 0;
 }

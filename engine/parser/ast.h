@@ -86,6 +86,7 @@ class array_item;
 class variable;
 class statement_list;
 class program;
+class construct;
 
 typedef engine::type::infinite_variant<
     engine::type::null_t,
@@ -94,7 +95,8 @@ typedef engine::type::infinite_variant<
     engine::type::real_t,
     engine::type::string_t,
     engine::type::recursive_wrapper<array>,
-    variable//,
+    variable,
+    construct//,
 
 //    engine::type::recursive_wrapper<binary_op<op::let>>,
 //    engine::type::recursive_wrapper<unary_op<op::add>>,
@@ -231,6 +233,53 @@ public:
     }
 
     bool operator!= (variable)
+    {
+        return true;
+    }
+};
+
+class construct: public node
+{
+public:
+    type::string_t name;
+
+    construct(const char *name): node(), name(name)
+    {
+        debug(this, "standard(const char *)");
+    }
+
+    construct(const type::string_t &name): node(), name(name)
+    {
+        debug(this, "standard(const std::string&)");
+    }
+
+    construct(const construct &self): node(), name(self.name)
+    {
+        debug(this, "standard(std::shared_ptr<std::string>&)");
+    }
+
+    std::ostream &dump(std::ostream &ios, size_t offset = 0)
+    {
+        auto padding = std::string(offset * 4, ' ');
+        return ios << padding << "construct: { " << name << " }";
+    }
+
+    bool operator== (const construct &) const
+    {
+        return false;
+    }
+
+    bool operator== (construct)
+    {
+        return false;
+    }
+
+    bool operator!= (const construct &) const
+    {
+        return true;
+    }
+
+    bool operator!= (construct)
     {
         return true;
     }

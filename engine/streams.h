@@ -11,7 +11,7 @@ operator<< (ostream &ios, internal_value &val)
     using namespace rephp::engine::visitor;
 
     auto visitor = internal_value_stream_visitor();
-    ios << boost::apply_visitor(visitor, rephp::reflection::internal_value::get_raw_value(ve));
+    ios << type::apply_visitor(visitor, rephp::reflection::internal_value::get_raw_value(ve));
 
     return ios;
 }

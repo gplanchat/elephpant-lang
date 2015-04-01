@@ -1,6 +1,6 @@
 
-#ifndef REPHP_TESTS_SCALAR_H
-#define REPHP_TESTS_SCALAR_H
+#ifndef REPHP_TESTS_OBJECT_H
+#define REPHP_TESTS_OBJECT_H
 
 #include "tests.h"
 

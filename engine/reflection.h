@@ -257,7 +257,8 @@ internal_value::dump(std::ostream &ios, value_t ve)
     auto visitor = rephp::engine::visitor::internal_value_stream_visitor();
 
     ios << internal_type::get_name(internal_value::get_type(ve)) << " { " ;
-    ios << boost::apply_visitor(visitor, internal_value::get_raw_value(ve)) << " } ";
+    ios << type::apply_visitor(visitor, internal_value::get_raw_value(ve));
+    ios << " } ";
 
     return ios;
 }

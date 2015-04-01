@@ -3,7 +3,7 @@
 #include "../engine/parser/ast.h"
 #include "../engine/parser/php.h"
 #include "tests.h"
-#include "scalar.h"
+#include "object.h"
 
 
 namespace rephp {
@@ -35,14 +35,14 @@ class_identifier::class_identifier(): suite()
         grammar_t parser;
         std::string sources("2Foo");
 
-        assert_not_equals<grammar_t,space_type,type::string_t> is_not_equal(parser, space);
-        is_not_equal(sources, type::string_t("2Foo"), "errored class identifier.");
+        assert_parse_failure<grammar_t,space_type> parse_failure(parser, space);
+        parse_failure(sources, "errored class identifier.");
     })) << (std::function<void()>([]() {
         grammar_t parser;
         std::string sources("Foo\\2Foo");
 
-        assert_not_equals<grammar_t,space_type,type::string_t> is_not_equal(parser, space);
-        is_not_equal(sources, type::string_t("2Foo"), "errored namespaced class identifier.");
+        assert_parse_failure<grammar_t,space_type> parse_failure(parser, space);
+        parse_failure(sources, "errored namespaced class identifier.");
     }));
 }
 

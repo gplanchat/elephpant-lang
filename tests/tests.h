@@ -37,11 +37,6 @@ public:
     virtual ~base_asserter()
     {}
 
-    virtual bool operator() (value_bag<Actual> &)
-    {
-        return false;
-    }
-
     virtual bool operator() (value_bag<Expected> &, value_bag<Actual> &)
     {
         return false;
@@ -52,7 +47,7 @@ template<typename Variant, typename Type>
 class variant_is_type: public base_asserter<Variant, Variant>
 {
 public:
-    bool operator() (value_bag<Variant> &actual);
+    bool operator() (value_bag<Variant> &expected, value_bag<Variant> &actual);
 };
 
 template<typename Expected, typename Actual>
@@ -99,7 +94,7 @@ public:
 
 template<typename Variant, typename Type>
 bool
-variant_is_type<Variant, Type>::operator() (value_bag<Variant> &actual)
+variant_is_type<Variant, Type>::operator() (value_bag<Variant> &, value_bag<Variant> &actual)
 {
     return type::variant_is_type<Type>(actual.value);
 }
@@ -157,6 +152,7 @@ class assertion
     void success(std::string message);
     template<typename Type>
     void error(std::string message, Type &expected);
+    void failure(std::string message);
     template<typename Type>
     void failure(std::string message, Type &expected, Type &actual);
     void ignore(std::string message);
@@ -211,12 +207,57 @@ public:
         return false;
     }
 
+    template<typename Iterator>
+    bool operator() (Iterator &begin, Iterator &end, std::string message)
+    {
+        std::string str;
+
+        try {
+            if (phrase_parse(begin, end, grammar, space)) {
+                if (message.size() > 0) {
+                    str = "Parsing succeeded, while it shouldn't: " + message;
+                    failure(str);
+                } else {
+                    str = "Parsing succeeded, while it shouldn't.";
+                    failure(str);
+                }
+                return false;
+            }
+        } catch (...) {
+            if (message.size() > 0) {
+                str = "An exception occurred while parsing: " + message;
+                exception(str);
+            } else {
+                str = "An exception occurred while parsing.";
+                exception(str);
+            }
+            return false;
+        }
+
+        if (message.size() > 0) {
+            str = "Success: " + message;
+            success(str);
+        } else {
+            str = "Success.";
+            success(str);
+        }
+
+        return false;
+    }
+
     template<typename Expected>
     bool operator() (asserter::base_asserter<Expected, Expected> &asserter, std::string input, value_bag<Expected> expected, std::string message)
     {
         auto it = input.begin();
         auto end = input.end();
         return (*this)(asserter, it, end, expected, message);
+    }
+
+    bool operator() (std::string input, std::string message)
+    {
+        auto it = input.begin();
+        auto end = input.end();
+        return (*this)(it, end, message);
     }
 };
 
@@ -437,6 +478,25 @@ public:
 };
 
 template<typename Grammar, typename Space>
+class assert_parse_failure
+{
+private:
+    assertion<Grammar, Space> assertion;
+
+public:
+    assert_parse_failure(Grammar &grammar, const Space &space): assertion(grammar, space)
+    {}
+
+    ~assert_parse_failure()
+    {}
+
+    bool operator() (std::string input, std::string message)
+    {
+        return assertion(input, message);
+    }
+};
+
+template<typename Grammar, typename Space>
 void
 assertion<Grammar,Space>::success(std::string message)
 {
@@ -452,6 +512,14 @@ assertion<Grammar,Space>::error(std::string message, Type &expected)
     // fg.white(31); bg.red(47);
     std::cerr << "[ \e[5;31;47mERROR\e[0m ] - \e[1;37m" << message << "\e[0m" << std::endl;
     std::cerr << "Expectation was : [ \e[5;31;47m" << expected << "\e[0m ]" << std::endl;
+}
+
+template<typename Grammar, typename Space>
+void
+assertion<Grammar,Space>::failure(std::string message)
+{
+    // fg.white(37); bg.red(41);
+    std::cerr << "[ \e[5;37;41mFAILURE\e[0m ] - \e[1;31m" << message << "\e[0m" << std::endl;
 }
 
 template<typename Grammar, typename Space>

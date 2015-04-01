@@ -12,10 +12,9 @@
 #include <initializer_list>
 #include <algorithm>
 
-#include <boost/variant.hpp>
-
 #include "types.h"
 #include "visitors.h"
+#include "variant.h"
 
 #define ADD_OPERATOR(op) {op, #op}
 
@@ -196,7 +195,7 @@ public:
     template<typename T>
     inline T to()
     {
-        return boost::get<T>(this->raw_value);
+        return type::get<T>(this->raw_value);
     }
 
     inline type::value_t call(type::operator_t op, std::initializer_list<type::value_t> parameters)
@@ -246,63 +245,63 @@ template<>
 inline bool
 internal_value::get<bool>() const
 {
-    return boost::get<bool>(this->raw_value);
+    return type::get<bool>(this->raw_value);
 }
 
 template<>
 inline char
 internal_value::get<char>() const
 {
-    return boost::get<char>(this->raw_value);
+    return type::get<char>(this->raw_value);
 }
 
 template<>
 inline long
 internal_value::get<long>() const
 {
-    return boost::get<long>(this->raw_value);
+    return type::get<long>(this->raw_value);
 }
 
 template<>
 inline double
 internal_value::get<double>() const
 {
-    return boost::get<double>(this->raw_value);
+    return type::get<double>(this->raw_value);
 }
 
 template<>
 inline type::string_t
 internal_value::get<type::string_t>() const
 {
-    return boost::get<type::string_t>(this->raw_value);
+    return type::get<type::string_t>(this->raw_value);
 }
 
 template<>
 inline type::vector_t
 internal_value::get<type::vector_t>() const
 {
-    return boost::get<type::vector_t>(this->raw_value);
+    return type::get<type::vector_t>(this->raw_value);
 }
 
 template<>
 inline type::map_t
 internal_value::get<type::map_t>() const
 {
-    return boost::get<type::map_t>(this->raw_value);
+    return type::get<type::map_t>(this->raw_value);
 }
 
 template<>
 inline type::multimap_t
 internal_value::get<type::multimap_t>() const
 {
-    return boost::get<type::multimap_t>(this->raw_value);
+    return type::get<type::multimap_t>(this->raw_value);
 }
 
 template<>
 inline shared_ptr<void>
 internal_value::get<shared_ptr<void>>() const
 {
-    return boost::get<shared_ptr<void>>(this->raw_value);
+    return type::get<shared_ptr<void>>(this->raw_value);
 }
 
 template<>
