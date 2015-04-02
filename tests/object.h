@@ -23,6 +23,16 @@ public:
     class_identifier();
 };
 
+class object_construct
+{
+public:
+    typedef grammar::object_construct<std::string::iterator, space_type> grammar_t;
+
+    test_suite suite;
+
+    object_construct();
+};
+
 }; // namespace parser
 
 };

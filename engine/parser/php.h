@@ -345,14 +345,12 @@ public:
 };
 
 template <typename Iterator, typename Skipper>
-class class_identifier: public qi::grammar<Iterator,type::string_t(),Skipper>
+class class_identifier: public qi::grammar<Iterator,ast::class_identifier(),Skipper>
 {
 private:
     void init()
     {
         namespace qi = boost::spirit::qi;
-
-        //separator_char.add("\\", '\\');
 
         base_identifier %= qi::lexeme [ qi::char_("a-zA-Z_") >> *qi::char_("a-zA-Z0-9_") ];
 
@@ -376,13 +374,11 @@ public:
     }
 
     qi::rule<Iterator,type::string_t(),Skipper> base_identifier;
-    qi::rule<Iterator,type::string_t(),Skipper> root;
-
-    //qi::symbols<char const, char const> separator_char;
+    qi::rule<Iterator,ast::class_identifier(),Skipper> root;
 };
 
 template <typename Iterator, typename Skipper>
-class object_construct: public qi::grammar<Iterator,ast::expression_t(),Skipper>
+class object_construct: public qi::grammar<Iterator,ast::object_construct(),Skipper>
 {
 private:
     void init()
@@ -411,7 +407,7 @@ public:
     class_identifier<Iterator, Skipper> identifier;
     code_expression<Iterator, Skipper> expression;
 
-    qi::rule<Iterator,ast::expression_t(),Skipper> root;
+    qi::rule<Iterator,ast::object_construct(),Skipper> root;
 };
 
 } // namespace php

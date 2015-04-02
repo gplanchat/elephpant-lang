@@ -22,81 +22,141 @@ namespace ast {
 
 namespace op {
 
-struct let {};
-struct add {};
-struct sub {};
-struct mul {};
-struct div {};
-struct mod {};
-struct intdiv {};
-struct exp {};
-struct logical_and {};
-struct logical_or {};
-struct logical_xor {};
-struct logical_not {};
-struct bitwise_and {};
-struct bitwise_or {};
-struct bitwise_xor {};
-struct bitwise_not {};
-struct lhs {};
-struct rhs {};
-struct offset {};
-struct concat {};
-struct eq {};
-struct strict_eq {};
-struct neq {};
-struct strict_neq {};
-struct lt {};
-struct gt {};
-struct lteq {};
-struct gteq {};
-struct spaceship {};
-struct increment_pre {};
-struct decrement_pre {};
-struct increment_post {};
-struct decrement_post {};
-struct choice {};
-struct isset {};
-struct grouping {};
+struct let {
+};
+struct add {
+};
+struct sub {
+};
+struct mul {
+};
+struct div {
+};
+struct mod {
+};
+struct intdiv {
+};
+struct exp {
+};
+struct logical_and {
+};
+struct logical_or {
+};
+struct logical_xor {
+};
+struct logical_not {
+};
+struct bitwise_and {
+};
+struct bitwise_or {
+};
+struct bitwise_xor {
+};
+struct bitwise_not {
+};
+struct lhs {
+};
+struct rhs {
+};
+struct offset {
+};
+struct concat {
+};
+struct eq {
+};
+struct strict_eq {
+};
+struct neq {
+};
+struct strict_neq {
+};
+struct lt {
+};
+struct gt {
+};
+struct lteq {
+};
+struct gteq {
+};
+struct spaceship {
+};
+struct increment_pre {
+};
+struct decrement_pre {
+};
+struct increment_post {
+};
+struct decrement_post {
+};
+struct choice {
+};
+struct isset {
+};
+struct grouping {
+};
 
 }; // namespace op
 
 namespace control {
 
-struct if_ {};
-struct else_ {};
-struct while_ {};
-struct do_while_ {};
-struct for_ {};
-struct foreach_ {};
-struct try_ {};
-struct catch_ {};
-struct finally_ {};
+struct if_ {
+};
+struct else_ {
+};
+struct while_ {
+};
+struct do_while_ {
+};
+struct for_ {
+};
+struct foreach_ {
+};
+struct try_ {
+};
+struct catch_ {
+};
+struct finally_ {
+};
 
 } // namespace control
 
 namespace engine = rephp::engine;
 
-template<typename Tag> class unary_op;
-template<typename Tag> class binary_op;
-template<typename Tag> class ternary_op;
-template<typename Tag> class control_structure;
+template<typename Tag>
+class unary_op;
+
+template<typename Tag>
+class binary_op;
+
+template<typename Tag>
+class ternary_op;
+
+template<typename Tag>
+class control_structure;
+
 class array;
+
 class array_item;
+
 class variable;
+
+class class_identifier;
+
 class statement_list;
+
 class program;
-class construct;
+
+class object_construct;
 
 typedef engine::type::infinite_variant<
-    engine::type::null_t,
-    engine::type::boolean_t,
-    engine::type::integer_t,
-    engine::type::real_t,
-    engine::type::string_t,
-    engine::type::recursive_wrapper<array>,
-    variable,
-    construct//,
+        engine::type::null_t,
+        engine::type::boolean_t,
+        engine::type::integer_t,
+        engine::type::real_t,
+        engine::type::string_t,
+        engine::type::recursive_wrapper<array>,
+        variable,
+        object_construct//,
 
 //    engine::type::recursive_wrapper<binary_op<op::let>>,
 //    engine::type::recursive_wrapper<unary_op<op::add>>,
@@ -139,21 +199,34 @@ typedef engine::type::infinite_variant<
 > expression_t;
 
 typedef engine::type::infinite_variant<
-    engine::type::recursive_wrapper<control_structure<control::if_>>,
-    engine::type::recursive_wrapper<control_structure<control::else_>>,
-    engine::type::recursive_wrapper<control_structure<control::while_>>,
-    engine::type::recursive_wrapper<control_structure<control::do_while_>>,
-    engine::type::recursive_wrapper<control_structure<control::for_>>,
-    engine::type::recursive_wrapper<control_structure<control::foreach_>>,
-    engine::type::recursive_wrapper<control_structure<control::try_>>,
-    engine::type::recursive_wrapper<control_structure<control::catch_>>,
-    engine::type::recursive_wrapper<control_structure<control::finally_>>,
+        engine::type::recursive_wrapper<control_structure<control::if_>>,
+        engine::type::recursive_wrapper<control_structure<control::else_>>,
+        engine::type::recursive_wrapper<control_structure<control::while_>>,
+        engine::type::recursive_wrapper<control_structure<control::do_while_>>,
+        engine::type::recursive_wrapper<control_structure<control::for_>>,
+        engine::type::recursive_wrapper<control_structure<control::foreach_>>,
+        engine::type::recursive_wrapper<control_structure<control::try_>>,
+        engine::type::recursive_wrapper<control_structure<control::catch_>>,
+        engine::type::recursive_wrapper<control_structure<control::finally_>>,
 
-    expression_t
+        expression_t
 > statement_t;
 
 std::ostream &expression_dump(std::ostream &ios, expression_t &expr, size_t offset = 0);
+
 std::ostream &expression_dump(std::ostream &ios, std::shared_ptr<expression_t> expr, size_t offset = 0);
+
+}; //namespace ast
+
+}; }; };
+
+std::ostream &operator<< (std::ostream &ios, rephp::engine::parser::ast::expression_t &expr);
+std::ostream &operator<< (std::ostream &ios, rephp::engine::parser::ast::class_identifier &identifier);
+std::ostream &operator<< (std::ostream &ios, rephp::engine::parser::ast::object_construct &construct);
+
+namespace rephp { namespace engine { namespace parser {
+
+namespace ast {
 
 namespace type = rephp::engine::type;
 
@@ -194,27 +267,35 @@ public:
 class variable: public node
 {
 public:
-    std::shared_ptr<std::string> name;
+    std::string name;
 
-    variable(const char *name): node(), name(new std::string(name))
-    {
-        debug(this, "standard(const char *)");
-    }
+    variable(): node(), name()
+    {}
 
-    variable(const std::string &name): node(), name(new std::string(name))
-    {
-        debug(this, "standard(const std::string&)");
-    }
+    variable(const char *name): node(), name(name)
+    {}
 
-    variable(std::shared_ptr<std::string> &name): node(), name(name)
-    {
-        debug(this, "standard(std::shared_ptr<std::string>&)");
-    }
+    variable(const std::string &name): node(), name(name)
+    {}
 
     std::ostream &dump(std::ostream &ios, size_t offset = 0)
     {
         auto padding = std::string(offset * 4, ' ');
-        return ios << padding << "variable: { " << *name << " }";
+        return ios << padding << "variable: { " << name << " }";
+    }
+
+    variable &operator= (const variable &self)
+    {
+        name = self.name;
+
+        return *this;
+    }
+
+    variable &operator= (const std::string &new_name)
+    {
+        name = new_name;
+
+        return *this;
     }
 
     bool operator== (const variable &) const
@@ -238,50 +319,113 @@ public:
     }
 };
 
-class construct: public node
+class class_identifier: public node
 {
 public:
-    type::string_t name;
+    std::string name;
 
-    construct(const char *name): node(), name(name)
-    {
-        debug(this, "standard(const char *)");
-    }
+    class_identifier(): node(), name()
+    {}
 
-    construct(const type::string_t &name): node(), name(name)
-    {
-        debug(this, "standard(const std::string&)");
-    }
+    class_identifier(const char *name): node(), name(name)
+    {}
 
-    construct(const construct &self): node(), name(self.name)
-    {
-        debug(this, "standard(std::shared_ptr<std::string>&)");
-    }
+    class_identifier(const std::string &name): node(), name(name)
+    {}
 
     std::ostream &dump(std::ostream &ios, size_t offset = 0)
     {
         auto padding = std::string(offset * 4, ' ');
-        return ios << padding << "construct: { " << name << " }";
+        return ios << padding << "class-ientifier: { " << name << " }";
     }
 
-    bool operator== (const construct &) const
+    class_identifier &operator= (const class_identifier &self)
     {
-        return false;
+        name = self.name;
+
+        return *this;
     }
 
-    bool operator== (construct)
+    class_identifier &operator= (const std::string &new_name)
     {
-        return false;
+        name = new_name;
+
+        return *this;
     }
 
-    bool operator!= (const construct &) const
+    bool operator== (const class_identifier &other) const
     {
-        return true;
+        return name == other.name;
     }
 
-    bool operator!= (construct)
+    bool operator== (class_identifier other)
     {
-        return true;
+        return name == other.name;
+    }
+
+    bool operator!= (const class_identifier &other) const
+    {
+        return name != other.name;
+    }
+
+    bool operator!= (class_identifier other)
+    {
+        return name != other.name;
+    }
+};
+
+class object_construct: public node
+{
+public:
+    class_identifier identifier;
+
+    object_construct(): node(), identifier()
+    {}
+
+    object_construct(class_identifier identifier): node(), identifier(identifier)
+    {}
+
+    object_construct(const object_construct &self): node(), identifier(self.identifier)
+    {}
+
+    std::ostream &dump(std::ostream &ios, size_t offset = 0)
+    {
+        auto padding = std::string(offset * 4, ' ');
+        return ios << padding << "object-construct: { " << identifier << " }";
+    }
+
+    object_construct &operator= (const class_identifier &identifier)
+    {
+        this->identifier = identifier;
+
+        return *this;
+    }
+
+    object_construct &operator= (const object_construct &self)
+    {
+        identifier = self.identifier;
+
+        return *this;
+    }
+
+    bool operator== (const object_construct &other) const
+    {
+        return identifier == other.identifier;
+    }
+
+    bool operator== (object_construct other)
+    {
+        return identifier == other.identifier;
+    }
+
+    bool operator!= (const object_construct &other) const
+    {
+        return identifier != other.identifier;
+    }
+
+    bool operator!= (object_construct other)
+    {
+        return identifier != other.identifier;
     }
 };
 
@@ -732,212 +876,8 @@ public:
     }
 };
 
-template<typename Type>
-class scalar_helper
-{
-public:
-    template<typename,typename>
-    struct result
-    {
-        typedef Type type;
-    };
-
-    Type operator() (Type value) const
-    {
-        std::cout << value << std::endl;
-        return value;
-    }
-};
-
-class string_helper
-{
-public:
-    template<typename,typename>
-    struct result
-    {
-        typedef type::string_t type;
-    };
-
-    type::string_t &operator() (type::string_t &value) const
-    {
-        return value;
-    }
-};
-
-class array_item_helper
-{
-public:
-    template<typename,typename>
-    struct result
-    {
-        typedef std::shared_ptr<ast::array_item> type;
-    };
-
-    std::shared_ptr<ast::array_item> operator() (std::shared_ptr<ast::expression_t> key, std::shared_ptr<ast::expression_t> value) const
-    {
-        std::shared_ptr<ast::array_item> ptr(new ast::array_item(key, value));
-        return ptr;
-    }
-
-    std::shared_ptr<ast::array_item> operator() (std::shared_ptr<ast::expression_t> value) const
-    {
-        std::shared_ptr<ast::expression_t> key(new ast::expression_t(false));
-        std::shared_ptr<ast::array_item> ptr(new ast::array_item(key, value));
-        return ptr;
-    }
-};
-
-class array_helper
-{
-public:
-    array_helper()
-    {}
-
-    struct result
-    {
-        typedef std::shared_ptr<ast::array> type;
-    };
-
-    std::shared_ptr<ast::expression_t> operator() (std::vector<std::shared_ptr<ast::array_item>> &pal) const
-    {
-        ast::array arr;
-        arr.items->insert(arr.items->end(), pal.begin(), pal.end());
-
-        std::shared_ptr<ast::expression_t> ptr(new ast::expression_t(arr));
-        return ptr;
-    }
-};
-
-class value_helper
-{
-public:
-    template<typename>
-    struct result
-    {
-        typedef std::shared_ptr<ast::expression_t> type;
-    };
-
-    template<typename Type>
-    std::shared_ptr<ast::expression_t> operator() (Type value) const
-    {
-        std::shared_ptr<ast::expression_t> ptr(new ast::expression_t(value));
-        return ptr;
-    }
-
-    std::shared_ptr<ast::expression_t> operator() (boost::optional<std::shared_ptr<ast::expression_t>> value) const
-    {
-        if (value) {
-            return *value;
-        }
-
-        return nullptr;
-    }
-};
-
-class variable_helper
-{
-public:
-    struct result
-    {
-        typedef std::shared_ptr<ast::expression_t> type;
-    };
-
-    std::shared_ptr<ast::expression_t> operator() (std::string &name) const
-    {
-        variable var(name);
-        std::shared_ptr<ast::expression_t> ptr(new ast::expression_t(var));
-        return ptr;
-    }
-};
-
-class operator_helper
-{
-public:
-    template<typename,typename>
-    struct result
-    {
-        typedef std::shared_ptr<ast::expression_t> type;
-    };
-
-    template<typename Operator>
-    std::shared_ptr<ast::expression_t> operator() (Operator, std::shared_ptr<ast::expression_t> operand) const
-    {
-        ast::unary_op<Operator> op(operand);
-        std::shared_ptr<ast::expression_t> ptr(new ast::expression_t(op));
-        return ptr;
-    }
-
-    template<typename Operator>
-    std::shared_ptr<ast::expression_t> operator() (Operator, std::shared_ptr<ast::expression_t> first, std::shared_ptr<ast::expression_t> second) const
-    {
-        ast::binary_op<Operator> op(first, second);
-        std::shared_ptr<ast::expression_t> ptr(new ast::expression_t(op));
-        return ptr;
-    }
-
-    template<typename Operator>
-    std::shared_ptr<ast::expression_t> operator() (Operator, std::shared_ptr<ast::expression_t> first, std::shared_ptr<ast::expression_t> second, std::shared_ptr<ast::expression_t> third) const
-    {
-        ast::ternary_op<Operator> op(first, second, third);
-        std::shared_ptr<ast::expression_t> ptr(new ast::expression_t(op));
-        return ptr;
-    }
-};
-
-class statement_list_helper
-{
-public:
-    template<typename,typename>
-    struct result
-    {
-        typedef std::shared_ptr<ast::statement_list> type;
-    };
-
-    std::shared_ptr<ast::statement_list> operator() (std::vector<std::shared_ptr<ast::expression_t>> &pal) const
-    {
-        std::shared_ptr<ast::statement_list> ptr(new ast::statement_list);
-        ptr->statements->insert(ptr->statements->end(), pal.begin(), pal.end());
-
-        return ptr;
-    }
-
-    std::shared_ptr<ast::statement_list> operator() (std::shared_ptr<ast::statement_list> statement_list, std::shared_ptr<ast::expression_t> expression) const
-    {
-        statement_list->statements->push_back(expression);
-
-        return statement_list;
-    }
-};
-
-class program_helper
-{
-public:
-    template<typename,typename>
-    struct result
-    {
-        typedef std::shared_ptr<ast::program> type;
-    };
-
-    std::shared_ptr<ast::program> operator() (std::vector<std::shared_ptr<ast::expression_t>> &pal) const
-    {
-        std::shared_ptr<ast::program> ptr(new ast::program);
-        ptr->expressions->insert(ptr->expressions->end(), pal.begin(), pal.end());
-
-        return ptr;
-    }
-
-    std::shared_ptr<ast::program> operator() (std::shared_ptr<ast::program> program, std::shared_ptr<ast::expression_t> expression) const
-    {
-        program->expressions->push_back(expression);
-
-        return program;
-    }
-};
-
 }; // namespace ast
 
 }; }; };
-
-std::ostream &operator<< (std::ostream &ios, rephp::engine::parser::ast::expression_t &expr);
 
 #endif

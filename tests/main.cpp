@@ -42,6 +42,7 @@ int main()
     test::simple_quoted_string simple_quoted_string;
     test::string string;
     test::class_identifier identifier;
+    test::object_construct construct;
 
     null.suite();
     boolean.suite();
@@ -52,6 +53,7 @@ int main()
     simple_quoted_string.suite();
     string.suite();
     identifier.suite();
+    construct.suite();
 
     return 0;
 }

@@ -43,7 +43,21 @@ std::ostream &expression_dump(std::ostream &ios, std::shared_ptr<expression_t> e
 
 std::ostream &operator<< (std::ostream &ios, rephp::engine::parser::ast::expression_t &expr)
 {
-    expression_dump(ios, expr);
+    rephp::engine::parser::ast::expression_dump(ios, expr);
+
+    return ios;
+}
+
+std::ostream &operator<< (std::ostream &ios, rephp::engine::parser::ast::class_identifier &identifier)
+{
+    ios << identifier.name;
+
+    return ios;
+}
+
+std::ostream &operator<< (std::ostream &ios, rephp::engine::parser::ast::object_construct &construct)
+{
+    ios << construct.identifier;
 
     return ios;
 }
